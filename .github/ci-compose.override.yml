@@ -1,0 +1,23 @@
+services:
+  kafka-1:
+    deploy:
+      replicas: 0
+
+  kafka-2:
+    deploy:
+      replicas: 0
+
+  kafka-0:
+    environment:
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka-0:9093
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server 127.0.0.1:9092 --list || exit 1"]
+
+  ugc:
+    depends_on:
+      kafka-0:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      sentry-web:
+        condition: service_started

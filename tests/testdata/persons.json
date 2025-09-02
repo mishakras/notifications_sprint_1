@@ -1,0 +1,26 @@
+[
+    {
+        "id": "a5a8f573-3cee-4ccc-8a2b-91cb9f55250a",
+        "name": "George Lucas"
+    },
+    {
+        "id": "26e83050-29ef-4163-a99d-b546cac208f8",
+        "name": "Mark Hamill"
+    },
+    {
+        "id": "5b4bf1bc-3397-4e83-9b17-8b10c6544ed1",
+        "name": "Harrison Ford"
+    },
+    {
+        "id": "b5d2b63a-ed1f-4e46-8320-cf52a32be358",
+        "name": "Carrie Fisher"
+    },
+    {
+        "id": "e039eedf-4daf-452a-bf92-a0085c68e156",
+        "name": "Peter Cushing"
+    },
+    {
+        "id": "1989ed1e-0c0b-4872-9dfb-f5ed13c764e2",
+        "name": "Irvin Kershner"
+    }
+]

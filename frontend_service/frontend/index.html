@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auth frontend</title>
+    <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+    <div id="form-container">
+        <form id="register-form">
+            <h2>Register</h2>
+            <input type="text" id="register-email" placeholder="Email" required>
+            <input type="password" id="register-password" placeholder="Password" required>
+            <button type="submit">Register</button>
+        </form>
+
+        <form id="login-form">
+            <h2>Login</h2>
+            <input type="text" id="login-email" placeholder="Email" required>
+            <input type="password" id="login-password" placeholder="Password" required>
+            <button type="submit">Login</button>
+        </form>
+
+        <button id="logout-btn">Logout</button>
+        <button id="refresh-btn">Refresh token</button>
+
+        <h2>Change credentials</h2>
+        <form id="change-credentials-form">
+            <input type="text" id="new-email" placeholder="New Email">
+            <input type="password" id="new-password" placeholder="New Password">
+            <input type="password" id="old-password" placeholder="Old Password" required>
+            <button type="submit">Change credentials</button>
+        </form>
+
+        <button id="login-history-btn">View login history</button>
+        <pre id="history-output"></pre>
+    </div>
+
+    <div id="data-container">
+        <h2>Films</h2>
+        <div id="films-output"></div>
+        <div id="pagination-controls">
+            <button id="prev-page">Previous</button>
+            <span id="current-page">Page 1</span>
+            <button id="next-page">Next</button>
+        </div>
+    </div>
+
+    <script src="js/fastapi.js"></script>
+</body>
+</html>

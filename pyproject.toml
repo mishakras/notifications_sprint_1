@@ -1,0 +1,74 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = [
+    "admin_service*",
+    "auth_lib*",
+    "auth_service*",
+    "content_service*",
+    "swagger_service*",
+]
+
+[project]
+name = "fastapi_solution"
+version = "0.1.0"
+description = "Practicum FastAPI project"
+authors = [{ name = "Students Second Team ", email = "your@e.mail" }]
+readme = "README.md"
+license = { text = "MIT" }
+dependencies = [
+    "aiohttp==3.11.11",
+    "alembic==1.14.1",
+    "asyncpg==0.30.0",
+    "bcrypt==4.2.1",
+    "elastic-transport==8.15.1",
+    "elasticsearch[async]==8.17.0",
+    "fastapi[standard]==0.115.6",
+    "orjson==3.10.14",
+    "opentelemetry-api==1.31.0",
+    "opentelemetry-exporter-otlp==1.31.0",
+    "opentelemetry-exporter-otlp-proto-common==1.31.0",
+    "opentelemetry-exporter-otlp-proto-grpc==1.31.0",
+    "opentelemetry-exporter-otlp-proto-http==1.31.0",
+    "opentelemetry-instrumentation==0.52b0",
+    "opentelemetry-instrumentation-asgi==0.52b0",
+    "opentelemetry-instrumentation-fastapi==0.52b0",
+    "opentelemetry-sdk==1.31.0",
+    "opentelemetry-semantic-conventions==0.52b0",
+    "opentelemetry-util-http==0.52b0",
+    "passlib==1.7.4",
+    "psycopg2==2.9.10",
+    "pydantic==2.10.5",
+    "python-dotenv~=1.0.1",
+    "python-jose==3.4.0",
+    "redis==5.2.1",
+    "SQLAlchemy==2.0.38",
+    "tenacity==9.0.0",
+    "uvicorn~=0.34.0",
+    "yarl==1.20.1",
+    "itsdangerous==2.2.0",
+    "starlette==0.41.3",
+    "Authlib==1.5.1",
+    "pydantic-settings==2.7.1",
+    "clickhouse-driver==0.2.9",
+    "kafka-python-ng==2.2.3",
+    "requests==2.32.3",
+    "python-logstash~=0.4.8",
+    "motor==3.7.1",
+    "beanie==1.30.0"
+]
+
+[tool.black]
+line-length = 79
+exclude = '''
+86ca8b001684_update_user_add_refresh_tokens.py|e36203d30cf7_initial_migration.py|cfda0fdd160e_fast_auth_migration.py
+'''
+
+[tool.isort]
+line_length=79
+multi_line_output=3
+include_trailing_comma=true
+skip_glob = ["auth_service/src/alembic/versions/*"]

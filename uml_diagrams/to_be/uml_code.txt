@@ -1,0 +1,101 @@
+@startuml
+
+Client -> WebApp: Открытие страницы
+WebApp -> WebLoggerBackend: Лог открытия страницы
+WebLoggerBackend -> Kafka: Лог открытия страницы
+
+Client -> WebApp: Регистрация
+WebApp -> WebAuthBackend: Регистрация
+WebApp -> WebLoggerBackend: Лог нажатия регистрация
+WebAuthBackend -> Postgres: Регистрация
+WebLoggerBackend -> Kafka: Лог нажатия регистрации
+WebAuthBackend -> WebApp: Подтверждение регистрации/ошибка
+WebApp -> Client: Подтверждение регистрации/ошибка
+
+Client -> WebApp: Логин
+WebApp -> WebAuthBackend: Логин
+WebApp -> WebLoggerBackend: Лог нажатия логина
+WebAuthBackend -> Postgres: Получение пользователя
+Postgres -> WebAuthBackend: Выдача пользователя/ошибка
+WebLoggerBackend -> Kafka: Лог логина
+WebAuthBackend -> WebApp: Выдача токена/ошибка
+WebApp -> Client: Выдача токена/ошибка
+
+Client -> WebApp: Запрос фильмов с токеном
+WebApp -> WebContentBackend: Запрос фильмов с токеном
+WebApp -> WebLoggerBackend: Лог нажатия запроса фильмов
+WebContentBackend -> WebAuthBackend: Запрос пользователя по токену
+WebAuthBackend -> WebContentBackend: Пользователь/ошибка
+WebContentBackend -> Redis: Запрос фильмов
+WebContentBackend -> Elastic: Запрос фильмов
+WebLoggerBackend -> Kafka: Лог запроса фильмов
+WebContentBackend -> WebApp: Выдача фильмов/ошибка
+WebApp -> Client: Выдача фильмов/ошибка
+
+Client -> WebApp: Фильтрация фильмов с токеном
+WebApp -> WebContentBackend: Фильтрация фильмов с токеном
+WebApp -> WebLoggerBackend: Лог фильтрации фильмов
+WebContentBackend -> WebAuthBackend: Запрос пользователя по токену
+WebAuthBackend -> WebContentBackend: Пользователь/ошибка
+WebContentBackend -> Redis: Запрос фильмов
+WebContentBackend -> Elastic: Запрос фильмов
+WebLoggerBackend -> Kafka: Лог фильтрации фильмов
+WebContentBackend -> WebApp: Выдача фильмов/ошибка
+WebApp -> Client: Выдача фильмов/ошибка
+
+Client -> WebApp: Просмотр фильма с токеном
+WebApp -> WebContentBackend: Просмотр фильма с токеном
+WebApp -> WebLoggerBackend: Лог просмотра фильма
+WebContentBackend -> WebAuthBackend: Запрос пользователя по токену
+WebAuthBackend -> WebContentBackend: Пользователь/ошибка
+WebContentBackend -> Redis: Запрос фильма
+WebContentBackend -> Elastic: Запрос фильма
+WebLoggerBackend -> Kafka: Лог просмотра фильма
+WebContentBackend -> WebApp: Выдача фильма/ошибка
+WebApp -> Client: Проигрывание фильма/ошибка
+
+Client -> WebApp: Переключение качества фильма\n с токеном
+WebApp -> WebContentBackend: Переключение качества фильма\n с токеном
+WebApp -> WebLoggerBackend: Лог переключение качества
+WebContentBackend -> WebAuthBackend: Запрос пользователя по токену
+WebAuthBackend -> WebContentBackend: Пользователь/ошибка
+WebContentBackend -> Redis: Запрос фильма
+WebContentBackend -> Elastic: Запрос фильма
+WebLoggerBackend -> Kafka: Лог переключение качества
+WebContentBackend -> WebApp: Выдача фильма\n с другим качеством\n/ошибка
+WebApp -> Client: Проигрывание фильма\n с другим качеством\n/ошибка
+
+Client -> AdminWebApp: Логин
+AdminWebApp -> AdminBackend: Логин
+WebApp -> WebLoggerBackend: Лог нажатия логина
+AdminBackend -> WebAuthBackend: Запрос пользователя\n по логину
+WebAuthBackend -> Postgres: Получение пользователя
+Postgres -> WebAuthBackend: Выдача пользователя\n/ошибка
+WebLoggerBackend -> Kafka: Лог логина администратора
+WebAuthBackend -> AdminBackend: Пользователь/ошибка
+AdminBackend -> WebAuthBackend: Запрос ролей по токену
+WebAuthBackend -> Postgres: Получение ролей\n пользователя
+Postgres -> WebAuthBackend: Выдача ролей\n/ошибка
+WebAuthBackend -> AdminBackend: Роли/ошибка
+AdminBackend -> AdminWebApp: Разрешение на администрирование\n/ошибка
+AdminWebApp -> Client: Разрешение на администрирование\n/ошибка
+
+Client -> AdminWebApp: Изменение данных о фильме
+AdminWebApp -> WebLoggerBackend: Лог нажатия изменения фильмов
+AdminWebApp -> AdminBackend: Изменение данных о фильме
+AdminBackend -> Postgres: Изменение данных о фильме
+Postgres -> WebAuthBackend: Подтверждение изменения\n/ошибка
+WebLoggerBackend -> Kafka: Лог изменения фильмов
+AdminBackend -> AdminWebApp: Подтверждение изменения\n/ошибка
+AdminWebApp -> Client: Подтверждение изменения\n/ошибка
+
+ETLFilmsApp -> Postgres: Получение данных о фильмах
+Postgres -> ETLFilmsApp: Данные о фильмах
+ETLFilmsApp -> Elastic: Данные о фильмах
+
+ETLKafkaApp -> Kafka: Чтение логов
+Kafka -> ETLKafkaApp: Данные логов
+ETLKafkaApp -> Clickhouse: Данные логов
+
+
+@enduml

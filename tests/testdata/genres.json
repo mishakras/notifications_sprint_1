@@ -1,0 +1,52 @@
+[
+    {
+        "id": "3d8d9bf5-0d90-4353-88ba-4ccc5d2c07ff",
+        "name": "Action",
+        "description": "Dynamic films featuring intense fight scenes and chases."
+    },
+    {
+        "id": "120a21cf-9097-479e-904a-13dd7198c1dd",
+        "name": "Adventure",
+        "description": "Adventurous stories filled with exciting journeys and discoveries."
+    },
+    {
+        "id": "b92ef010-5e4c-4fd0-99d6-41b6456272cd",
+        "name": "Fantasy",
+        "description": "Films based in magical worlds and featuring fantastical creatures."
+    },
+    {
+        "id": "6c162475-c7ed-4461-9184-001ef3d9f26e",
+        "name": "Sci-Fi",
+        "description": "Science fiction films exploring technology and the future."
+    },
+    {
+        "id": "1cacff68-643e-4ddd-8f57-84b62538081a",
+        "name": "Drama",
+        "description": "Emotional stories focused on complex human relationships."
+    },
+    {
+        "id": "56b541ab-4d66-4021-8708-397762bff2d4",
+        "name": "Music",
+        "description": "Films where music plays a central role in the storyline."
+    },
+    {
+        "id": "237fd1e4-c98e-454e-aa13-8a13fb7547b5",
+        "name": "Romance",
+        "description": "Stories about love and romantic relationships between characters."
+    },
+    {
+        "id": "526769d7-df18-4661-9aa6-49ed24e9dfd8",
+        "name": "Thriller",
+        "description": "Tense films filled with unexpected twists and mysteries."
+    },
+    {
+        "id": "ca88141b-a6b4-450d-bbc3-efa940e4953f",
+        "name": "Mystery",
+        "description": "Films focused on unraveling secrets and investigations."
+    },
+    {
+        "id": "5373d043-3f41-4ea8-9947-4b746c601bbd",
+        "name": "Comedy",
+        "description": "Humorous films aimed at entertaining and making people laugh."
+    }
+]

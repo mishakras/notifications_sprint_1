@@ -1,0 +1,6 @@
+elastic-transport==8.15.1
+elasticsearch==8.17.0
+psycopg==3.2.3
+psycopg-binary==3.2.3
+python-dotenv==1.0.1
+tenacity==9.0.0

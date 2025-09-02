@@ -1,0 +1,50 @@
+include:
+  - kafka_etl/kafka_docker/kafka-compose.yml
+
+services:
+
+  theatre-db:
+    image: postgres:16
+    restart: always
+    env_file:
+      - ./common/.env
+    volumes:
+      - ./common/database_dump.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      fastapi_network:
+        ipv4_address: 172.28.0.150
+
+
+  notification-service:
+    depends_on:
+      kafka-0:
+        condition: service_healthy
+      kafka-1:
+        condition: service_healthy
+      kafka-2:
+        condition: service_healthy
+    build:
+      context: .
+      dockerfile: notification_service/Dockerfile
+    env_file:
+      - ./common/.env
+    ports:
+      - "8000:8000"
+    networks:
+      fastapi_network:
+        ipv4_address: 172.28.0.161
+
+networks:
+  fastapi_network:
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.28.0.0/16
+          gateway: 172.28.0.1
+
+volumes:
+  static_volume:
+  mongodb_data:
+  sentry_data:
+  sentry_postgres_data:
+  sentry_redis_data:

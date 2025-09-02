@@ -1,0 +1,5 @@
+tenacity==9.0.0
+clickhouse-driver==0.2.9
+kafka-python-ng==2.2.3
+pydantic-settings==2.9.1
+requests==2.32.3

@@ -1,0 +1,13 @@
+include:
+  - ../docker-compose.yml
+
+services:
+  tests:
+    build: ../.
+    container_name: tests
+    links:
+      - nginx
+    entrypoint: ["sleep", "infinity"]
+    networks:
+      fastapi_network:
+        ipv4_address: 172.28.0.231

@@ -1,0 +1,8 @@
+Django==4.2.11
+django-debug-toolbar==5.1.0
+dotenv==0.9.9
+psycopg-binary==3.2.6
+psycopg2==2.9.10
+python-dotenv
+django-split-settings
+requests==2.32.3

@@ -1,0 +1,51 @@
+@startuml
+
+Client -> WebApp: Регистрация
+WebApp -> WebAuthBackend: Регистрация
+WebAuthBackend -> Postgres: Регистрация
+WebAuthBackend -> WebApp: Подтверждение регистрации/ошибка
+WebApp -> Client: Подтверждение регистрации/ошибка
+
+Client -> WebApp: Логин
+WebApp -> WebAuthBackend: Логин
+WebAuthBackend -> Postgres: Получение пользователя
+Postgres -> WebAuthBackend: Выдача пользователя/ошибка
+WebAuthBackend -> Postgres: Лог логина
+WebAuthBackend -> WebApp: Выдача токена/ошибка
+WebApp -> Client: Выдача токена/ошибка
+
+Client -> WebApp: Запрос фильмов с токеном
+WebApp -> WebContentBackend: Запрос фильмов с токеном
+WebContentBackend -> WebAuthBackend: Запрос пользователя по токену
+WebAuthBackend -> WebContentBackend: Пользователь/ошибка
+WebContentBackend -> Redis: Запрос фильмов
+WebContentBackend -> Elastic: Запрос фильмов
+WebContentBackend -> WebApp: Выдача фильмов/ошибка
+WebApp -> Client: Выдача фильмов/ошибка
+
+Client -> AdminWebApp: Логин
+AdminWebApp -> AdminBackend: Логин
+AdminBackend -> WebAuthBackend: Запрос пользователя\n по логину
+WebAuthBackend -> Postgres: Получение пользователя
+Postgres -> WebAuthBackend: Выдача пользователя\n/ошибка
+WebAuthBackend -> Postgres: Лог логина
+WebAuthBackend -> AdminBackend: Пользователь/ошибка
+AdminBackend -> WebAuthBackend: Запрос ролей по токену
+WebAuthBackend -> Postgres: Получение ролей\n пользователя
+Postgres -> WebAuthBackend: Выдача ролей\n/ошибка
+WebAuthBackend -> AdminBackend: Роли/ошибка
+AdminBackend -> AdminWebApp: Разрешение на администрирование\n/ошибка
+AdminWebApp -> Client: Разрешение на администрирование\n/ошибка
+
+Client -> AdminWebApp: Изменение данных о фильме
+AdminWebApp -> AdminBackend: Изменение данных о фильме
+AdminBackend -> Postgres: Изменение данных о фильме
+Postgres -> WebAuthBackend: Подтверждение изменения\n/ошибка
+AdminBackend -> AdminWebApp: Подтверждение изменения\n/ошибка
+AdminWebApp -> Client: Подтверждение изменения\n/ошибка
+
+ETLApp -> Postgres: Получение данных о фильмах
+Postgres -> ETLApp: Данные о фильмах
+ETLApp -> Elastic: Данные о фильмах
+
+@enduml

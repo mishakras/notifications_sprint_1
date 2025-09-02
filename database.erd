@@ -1,0 +1,113 @@
+{
+  "$schema": "https://raw.githubusercontent.com/dineug/erd-editor/main/json-schema/schema.json",
+  "version": "3.0.0",
+  "settings": {
+    "width": 2000,
+    "height": 2000,
+    "scrollTop": -1084.3333,
+    "scrollLeft": -450.0001,
+    "zoomLevel": 1,
+    "show": 431,
+    "database": 16,
+    "databaseName": "authservice",
+    "canvasType": "ERD",
+    "language": 1,
+    "tableNameCase": 4,
+    "columnNameCase": 2,
+    "bracketType": 1,
+    "relationshipDataTypeSync": true,
+    "relationshipOptimization": false,
+    "columnOrder": [
+      1,
+      2,
+      4,
+      8,
+      16,
+      32,
+      64
+    ],
+    "maxWidthComment": -1,
+    "ignoreSaveSettings": 0
+  },
+  "doc": {
+    "tableIds": [],
+    "relationshipIds": [],
+    "indexIds": [],
+    "memoIds": []
+  },
+  "collections": {
+    "tableEntities": {
+      "2Sd1oQQnb52APfnVHgIbw": {
+        "id": "2Sd1oQQnb52APfnVHgIbw",
+        "name": "",
+        "comment": "",
+        "columnIds": [],
+        "seqColumnIds": [
+          "dzHo85PKs62hTtVhK0NRg"
+        ],
+        "ui": {
+          "x": 203.0001,
+          "y": 117.6664,
+          "zIndex": 10,
+          "widthName": 60,
+          "widthComment": 60,
+          "color": ""
+        },
+        "meta": {
+          "updateAt": 1739991266923,
+          "createAt": 1739990985498
+        }
+      }
+    },
+    "tableColumnEntities": {
+      "dzHo85PKs62hTtVhK0NRg": {
+        "id": "dzHo85PKs62hTtVhK0NRg",
+        "tableId": "2Sd1oQQnb52APfnVHgIbw",
+        "name": "",
+        "comment": "",
+        "dataType": "",
+        "default": "",
+        "options": 0,
+        "ui": {
+          "keys": 0,
+          "widthName": 60,
+          "widthComment": 60,
+          "widthDataType": 60,
+          "widthDefault": 60
+        },
+        "meta": {
+          "updateAt": 1739990997350,
+          "createAt": 1739990997350
+        }
+      }
+    },
+    "relationshipEntities": {},
+    "indexEntities": {},
+    "indexColumnEntities": {},
+    "memoEntities": {}
+  },
+  "lww": {
+    "settings.databaseName": [
+      "settings",
+      -1,
+      -1,
+      {
+        "databaseName": 1739990923441
+      }
+    ],
+    "2Sd1oQQnb52APfnVHgIbw": [
+      "tableEntities",
+      1739991240720,
+      1739991267170,
+      {
+        "name": 1739991266922
+      }
+    ],
+    "dzHo85PKs62hTtVhK0NRg": [
+      "tableColumnEntities",
+      1739990997349,
+      1739991240916,
+      {}
+    ]
+  }
+}
