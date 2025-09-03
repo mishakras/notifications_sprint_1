@@ -1,7 +1,124 @@
 include:
+  - kafka_etl/clickhouse_docker/clickhouse-compose.yml
   - kafka_etl/kafka_docker/kafka-compose.yml
 
 services:
+  auth-service:
+    links:
+      - elastic
+      - theatre-db
+      - redis
+      - jaeger
+      - sentry-web
+    build: .
+    restart: always
+    entrypoint: >
+      sh -c "python3 /opt/partitioner/wait_for_postgres.py
+      && ALEMBIC_CONFIG=/opt/auth_service/src/alembic.ini alembic upgrade head
+      && fastapi run /opt/auth_service/src/main.py --proxy-headers --port 8000"
+    env_file:
+      - ./common/.env
+    stdin_open: true
+    tty: true
+    networks:
+      fastapi_network:
+        ipv4_address: 172.28.0.50
+
+  content-service:
+    links:
+      - elastic
+      - theatre-db
+      - redis
+      - jaeger
+      - sentry-web
+    build: .
+    restart: always
+    entrypoint: >
+      sh -c "python3 /opt/partitioner/wait_for_postgres.py
+      && fastapi run /opt/content_service/src/main.py --proxy-headers --port 8000"
+    env_file:
+      - ./common/.env
+    stdin_open: true
+    tty: true
+    networks:
+      fastapi_network:
+        ipv4_address: 172.28.0.55
+
+  swagger-service:
+    links:
+      - auth-service
+      - content-service
+      - sentry-web
+    build: .
+    restart: always
+    entrypoint: >
+      sh -c "fastapi run /opt/swagger_service/src/main.py --proxy-headers --port 8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+    stdin_open: true
+    tty: true
+    networks:
+      fastapi_network:
+        ipv4_address: 172.28.0.57
+
+  admin-service:
+    links:
+      - auth-service
+      - content-service
+      - sentry-web
+    build: admin_service
+    environment:
+      - PYTHONUNBUFFERED=1
+    stdin_open: true
+    tty: true
+    volumes:
+      - static_volume:/opt/staticfiles:ro
+    entrypoint: >
+      sh -c "python3 /opt/wait_for_postgres.py
+      && python manage.py runserver 0.0.0.0:8000"
+    networks:
+      fastapi_network:
+        ipv4_address: 172.28.0.59
+
+  nginx:
+    build: frontend_service
+    links:
+      - auth-service
+      - content-service
+      - ugc
+    ports:
+      - "80:80"
+    volumes:
+      - static_volume:/opt/staticfiles:ro
+    networks:
+      fastapi_network:
+        ipv4_address: 172.28.0.10
+
+  etl:
+    links:
+      - elastic
+      - theatre-db
+      - sentry-web
+    build: etl
+    restart: always
+    stdin_open: true
+    tty: true
+    networks:
+      fastapi_network:
+        ipv4_address: 172.28.0.60
+
+  elastic:
+    image: elasticsearch:8.16.1
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms1024m -Xmx1024m"
+    restart: always
+    ports:
+      - "9200:9200"
+    networks:
+      fastapi_network:
+        ipv4_address: 172.28.0.100
 
   theatre-db:
     image: postgres:16
@@ -14,6 +131,314 @@ services:
       fastapi_network:
         ipv4_address: 172.28.0.150
 
+  partitioner:
+    links:
+      - theatre-db
+      - sentry-web
+    build: partitioner
+    restart: always
+    env_file:
+      - ./common/.env
+    entrypoint: >
+      sh -c "python3 /opt/partitioner/wait_for_postgres.py
+      && python3 /opt/partitioner/main.py"
+    stdin_open: true
+    tty: true
+    networks:
+      fastapi_network:
+        ipv4_address: 172.28.0.155
+
+  redis:
+    image: 'bitnami/redis:latest'
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./redisdata:/data
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    restart: unless-stopped
+    tty: true
+    stdin_open: true
+    networks:
+      fastapi_network:
+        ipv4_address: 172.28.0.160
+
+  jaeger:
+    image: 'jaegertracing/all-in-one:latest'
+    restart: always
+    ports:
+      - "16686:16686"
+    environment:
+      - COLLECTOR_ZIPKIN_HTTP_PORT=9411
+    networks:
+      fastapi_network:
+        ipv4_address: 172.28.0.170
+
+  kafka_etl:
+    depends_on:
+      - zookeeper
+      - clickhouse-node1
+      - clickhouse-node2
+      - kafka-0
+      - kafka-1
+      - kafka-2
+      - sentry-web
+    build:
+      context: .
+      dockerfile: kafka_etl/Dockerfile
+    entrypoint: >
+      sh -c "python3 /opt/kafka_etl/etl.py"
+    restart: always
+    stdin_open: true
+    tty: true
+    networks:
+      fastapi_network:
+        ipv4_address: 172.28.0.70
+
+  mongodb:
+    container_name: ugc_mongo
+    restart: unless-stopped
+    image: mongo:8
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${DB__USERNAME:-mongodb}
+      MONGO_INITDB_ROOT_PASSWORD: ${DB__PASSWORD:-mongodb}
+    ports:
+      - "${DB__PORT:-27017}:${DB__PORT:-27017}"
+    healthcheck:
+      test: [ "CMD", "mongosh", "--eval", "db.adminCommand('ping')" ]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      fastapi_network:
+        ipv4_address: 172.28.0.110
+
+  ugc:
+    build:
+      context: .
+      dockerfile: ugc_api/Dockerfile
+    container_name: ugc_api
+    restart: unless-stopped
+    environment:
+      - DOCKER=true
+    env_file:
+      - ./common/.env
+    stdin_open: true
+    tty: true
+    depends_on:
+      kafka-0:
+        condition: service_healthy
+      kafka-1:
+        condition: service_healthy
+      kafka-2:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      sentry-web:
+        condition: service_started
+    networks:
+      fastapi_network:
+        ipv4_address: 172.28.0.120
+
+  mongo_user_api:
+    build:
+      context: .
+      dockerfile: mongo_db_user_api/Dockerfile
+    container_name: mongo_user_api
+    restart: unless-stopped
+    environment:
+      - DOCKER=true
+    env_file:
+      - ./common/.env
+    ports:
+      - "8000:8000"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      fastapi_network:
+        ipv4_address: 172.28.0.130
+
+  elasticsearch_logs:
+    image: elasticsearch:8.10.2
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - xpack.security.enabled=false
+    ports:
+      - 9300:9200
+    volumes:
+      - ./deploy/esdata:/usr/share/elasticsearch/data
+    networks:
+      fastapi_network:
+        ipv4_address: 172.28.0.141
+
+  kibana:
+    image: kibana:8.10.2
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch_logs
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch_logs:9200
+    networks:
+      fastapi_network:
+        ipv4_address: 172.28.0.142
+
+  logstash:
+    image: logstash:8.10.2
+    environment:
+      XPACK_MONITORING_ENABLED: "false"
+      ES_HOST: "172.28.0.141:9200"
+    ports:
+      - "5045:5045/udp"
+      - "5044:5044/udp"
+    volumes:
+      - ./common/logstash.conf:/config/logstash.conf:ro
+    command: logstash -f /config/logstash.conf
+    networks:
+      fastapi_network:
+        ipv4_address: 172.28.0.140
+
+  sentry-postgres:
+    image: postgres:16
+    restart: always
+    environment:
+      POSTGRES_USER: sentry
+      POSTGRES_PASSWORD: sentry
+      POSTGRES_DB: sentry
+    ports:
+      - "5433:5433"
+    command: postgres -p 5433
+    volumes:
+      - sentry_postgres_data:/var/lib/postgresql/data
+    networks:
+      fastapi_network:
+        ipv4_address: 172.28.0.201
+
+  sentry-web:
+    image: sentry:latest
+    platform: linux/amd64
+    container_name: sentry-web
+    restart: unless-stopped
+    environment:
+    - SENTRY_POSTGRES_HOST=sentry-postgres
+    - SENTRY_REDIS_HOST=sentry-redis
+    - CSRF_TRUSTED_ORIGINS=*
+    - CSRF_COOKIE_SECURE=False
+    depends_on:
+      - sentry-redis
+      - sentry-postgres
+    env_file:
+      - ./common/.env
+    ports:
+      - "0.0.0.0:10000:9000"
+    volumes:
+      - sentry_data:/var/lib/sentry/files
+    networks:
+      fastapi_network:
+        ipv4_address: 172.28.0.202
+
+  sentry-worker:
+    image: sentry:latest
+    platform: linux/amd64
+    restart: unless-stopped
+    depends_on:
+      - sentry-redis
+      - sentry-postgres
+    env_file:
+      - ./common/.env
+    command: run worker
+    volumes:
+      - sentry_data:/var/lib/sentry/files
+    networks:
+      fastapi_network:
+        ipv4_address: 172.28.0.203
+
+  sentry-cron:
+    image: sentry:latest
+    platform: linux/amd64
+    restart: unless-stopped
+    depends_on:
+      - sentry-redis
+      - sentry-postgres
+    env_file:
+      - ./common/.env
+    command: sentry run cron
+    volumes:
+      - sentry_data:/var/lib/sentry/files
+    networks:
+      fastapi_network:
+        ipv4_address: 172.28.0.204
+
+  sentry-redis:
+    image: redis:6.2-alpine
+    environment:
+    - ALLOW_EMPTY_PASSWORD=yes
+    container_name: sentry-redis
+    restart: unless-stopped
+    volumes:
+    - sentry_redis_data:/data
+    tty: true
+    stdin_open: true
+    ports:
+    - "6378:6379"
+    networks:
+      fastapi_network:
+        ipv4_address: 172.28.0.205
+
+  mailer_api:
+    build:
+      context: .
+      dockerfile: mailer_api/Dockerfile
+    container_name: mailer_api
+    restart: unless-stopped
+    environment:
+      - DOCKER=true
+    env_file:
+      - ./common/.env
+    ports:
+      - "8001:8001"
+    networks:
+      fastapi_network:
+        ipv4_address: 172.28.0.151
+
+  websocket:
+    build:
+      context: .
+      dockerfile: websocket/Dockerfile
+    container_name: websocket
+    restart: unless-stopped
+    environment:
+      - DOCKER=true
+    env_file:
+      - ./common/.env
+    ports:
+      - "8765:8765"
+    networks:
+      fastapi_network:
+        ipv4_address: 172.28.0.152
+
+  shortener:
+    build:
+      context: ./shortener
+    container_name: shortener-app
+    ports:
+      - "8888:8888"
+    restart: unless-stopped
+    networks:
+      fastapi_network:
+        ipv4_address: 172.28.0.206
 
   notification-service:
     depends_on:

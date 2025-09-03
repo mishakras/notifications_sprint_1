@@ -2,7 +2,7 @@ import os
 
 from fastapi import APIRouter, Depends
 
-from auth_service.src.core import logger
+from notification_service.src.core import logger
 from notification_service.src.services.notif.notifications import (
     NotifService,
     get_notif_service,
