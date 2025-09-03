@@ -397,37 +397,6 @@ services:
       fastapi_network:
         ipv4_address: 172.28.0.205
 
-  mailer_api:
-    build:
-      context: .
-      dockerfile: mailer_api/Dockerfile
-    container_name: mailer_api
-    restart: unless-stopped
-    environment:
-      - DOCKER=true
-    env_file:
-      - ./common/.env
-    ports:
-      - "8001:8001"
-    networks:
-      fastapi_network:
-        ipv4_address: 172.28.0.151
-
-  websocket:
-    build:
-      context: .
-      dockerfile: websocket/Dockerfile
-    container_name: websocket
-    restart: unless-stopped
-    environment:
-      - DOCKER=true
-    env_file:
-      - ./common/.env
-    ports:
-      - "8765:8765"
-    networks:
-      fastapi_network:
-        ipv4_address: 172.28.0.152
 
   shortener:
     build:
