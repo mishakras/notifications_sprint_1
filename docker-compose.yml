@@ -428,6 +428,22 @@ services:
       fastapi_network:
         ipv4_address: 172.28.0.161
 
+  websocket:
+    build:
+      context: .
+      dockerfile: websocket/Dockerfile
+    container_name: websocket
+    restart: unless-stopped
+    environment:
+      - DOCKER=true
+    env_file:
+      - ./common/.env
+    ports:
+      - "8000:8000"
+    networks:
+      fastapi_network:
+        ipv4_address: 172.28.0.152
+
 networks:
   fastapi_network:
     ipam:
