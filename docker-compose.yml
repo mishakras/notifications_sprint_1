@@ -276,7 +276,7 @@ services:
       - ES_JAVA_OPTS=-Xms512m -Xmx512m
       - xpack.security.enabled=false
     ports:
-      - 9300:9200
+      - "9300:9200"
     volumes:
       - ./deploy/esdata:/usr/share/elasticsearch/data
     networks:
@@ -443,6 +443,26 @@ services:
     networks:
       fastapi_network:
         ipv4_address: 172.28.0.152
+
+  notification_worker:
+    build:
+      context: .
+      dockerfile: notification_worker/Dockerfile
+    env_file:
+      - ./common/.env
+    environment:
+      - KAFKA_HOST=kafka
+      - KAFKA_PORT=9092
+      - AUTH_SERVICE_URL=http://auth_service:8000
+      - SHORTENER_URL=http://shortener:8888
+    depends_on:
+      - kafka
+      - auth_service
+      - shortener
+    restart: unless-stopped
+    networks:
+      fastapi_network:
+        ipv4_address: 172.28.0.153
 
 networks:
   fastapi_network:
