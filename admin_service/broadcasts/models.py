@@ -3,7 +3,7 @@ from __future__ import annotations
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-
+from django.core.exceptions import ValidationError
 
 class DeliveryMethod(models.TextChoices):
     EMAIL = "email", _("Email")
@@ -70,7 +70,10 @@ class Campaign(models.Model):
         _("Аудитория"),
         max_length=255,
         default="all",
-        help_text=_("Напр.: 'all', 'segment:premium', 'user_ids:1,2,3'"),
+        help_text=_(
+            "Напр.: "
+            "'all', 'segment:premium', 'user_ids:1,2,3'"
+        ),
     )
 
     schedule_type = models.CharField(
@@ -91,7 +94,10 @@ class Campaign(models.Model):
         max_length=128,
         null=True,
         blank=True,
-        help_text=_("Только для повторяющихся задач. Пример: '0 12 * * FRI'"),
+        help_text=_(
+            "Только для повторяющихся задач. "
+            "Пример: '0 12 * * FRI'"
+        ),
     )
 
     status = models.CharField(
@@ -101,8 +107,10 @@ class Campaign(models.Model):
         default=CampaignStatus.DRAFT,
         db_index=True,
     )
-    created_at = models.DateTimeField(_("Создано"), auto_now_add=True)
-    updated_at = models.DateTimeField(_("Обновлено"), auto_now=True)
+    created_at = models.DateTimeField(_("Создано"),
+                                      auto_now_add=True)
+    updated_at = models.DateTimeField(_("Обновлено"),
+                                      auto_now=True)
 
     class Meta:
         verbose_name = _("Кампания")
@@ -113,13 +121,18 @@ class Campaign(models.Model):
         return self.name
 
     def clean(self) -> None:
-        from django.core.exceptions import ValidationError
 
-        if self.schedule_type == ScheduleType.DELAYED and not self.delay_seconds:
+
+        if (self.schedule_type == ScheduleType.DELAYED
+                and not self.delay_seconds):
             raise ValidationError(
-                _("Для отложенной кампании укажите 'delay_seconds'.")
+                _(
+                    "Для отложенной кампании укажите 'delay_seconds'."
+                )
             )
         if self.schedule_type == ScheduleType.CRON and not self.cron:
             raise ValidationError(
-                _("Для повторяющейся кампании укажите 'cron'.")
+                _(
+                    "Для повторяющейся кампании укажите 'cron'."
+                )
             )

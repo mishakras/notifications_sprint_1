@@ -33,20 +33,15 @@ class CampaignAdmin(admin.ModelAdmin):
     actions = ("run_now", "plan_selected")
 
     fieldsets = (
-        (
-            None,
-            {
-                "fields": (
-                    "name",
-                    "template",
-                    "delivery_method",
-                    "audience",
-                )
-            },
-        ),
+        (None, {"fields": ("name",
+                           "template",
+                           "delivery_method",
+                           "audience")}),
         (
             "Расписание",
-            {"fields": ("schedule_type", "delay_seconds", "cron")},
+            {"fields": ("schedule_type",
+                        "delay_seconds",
+                        "cron")},
         ),
         ("Служебные", {"fields": ("status",)}),
     )
@@ -76,7 +71,7 @@ class CampaignAdmin(admin.ModelAdmin):
 
     def run_now_button(self, obj: Campaign) -> str:
         return format_html(
-            '<a class="button" href="{}">Запустить</a>',
+            '<a class="button" href="{0}">Запустить</a>',
             f"./{obj.id}/change/",
         )
 

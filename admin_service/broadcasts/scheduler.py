@@ -5,12 +5,11 @@ import os
 from datetime import timedelta
 from typing import Optional
 
-from django.conf import settings
-from django.utils import timezone as dj_timezone
-
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.date import DateTrigger
+from django.conf import settings
+from django.utils import timezone as dj_timezone
 from django_apscheduler.jobstores import DjangoJobStore
 from django_apscheduler.models import DjangoJobExecution
 from django_apscheduler.util import close_old_connections
@@ -27,9 +26,9 @@ def get_scheduler() -> BackgroundScheduler:
     """
     Инициализирует/кеширует APScheduler.
 
-    Если выставлен DISABLE_SCHEDULER=1, создаём планировщик без
-    jobstore'а и не запускаем фоновые задачи — это нужно, чтобы
-    миграции проходили без ошибок по отсутствующим таблицам.
+    Если выставлен DISABLE_SCHEDULER=1, создаём планировщик без jobstore
+    и не запускаем фоновые задачи — это нужно, чтобы миграции проходили
+    без ошибок по отсутствующим таблицам.
     """
     global _scheduler
     if _scheduler is not None:
@@ -64,7 +63,7 @@ def schedule_campaign(campaign_id: int) -> str:
     """
     if os.getenv("DISABLE_SCHEDULER"):
         logger.info(
-            "Skip scheduling campaign %s because DISABLE_SCHEDULER=1 is set.",
+            "Skip scheduling campaign %s: DISABLE_SCHEDULER=1",
             campaign_id,
         )
         return ""
@@ -106,12 +105,14 @@ def schedule_campaign(campaign_id: int) -> str:
         "coalesce": True,
         "replace_existing": True,
         "misfire_grace_time": 60 * 10,
+        "jobstore": "default",
     }
-    # Если jobstore добавлен (обычный режим) — укажем его явно.
-    if any(name == "default" for name in scheduler._jobstores):  # noqa: SLF001
-        add_kwargs["jobstore"] = "default"
 
-    scheduler.add_job(run_campaign_job, trigger=trigger, **add_kwargs)
+    scheduler.add_job(
+        run_campaign_job,
+        trigger=trigger,
+        **add_kwargs,
+    )
     logger.info(
         "Scheduled campaign %s with job %s using trigger %s",
         campaign_id,

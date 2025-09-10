@@ -16,6 +16,10 @@ def _cfg(key: str, default: str) -> str:
     return str(_CFG.get(key, os.getenv(key, default)))
 
 
-KAFKA_BOOTSTRAP_SERVERS = _cfg("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
-KAFKA_TOPIC = _cfg("KAFKA_TOPIC", "notifications")
-SCHEDULER_TIMEZONE = _cfg("SCHEDULER_TIMEZONE", "UTC")
+KAFKA_BOOTSTRAP_SERVERS = _cfg(
+                    "KAFKA_BOOTSTRAP_SERVERS",
+                   "localhost:9092")
+KAFKA_TOPIC = _cfg("KAFKA_TOPIC",
+                   "notifications")
+SCHEDULER_TIMEZONE = _cfg("SCHEDULER_TIMEZONE",
+                          "UTC")
