@@ -43,7 +43,7 @@ class NotificationWorker:
         """Инициализация всех зависимостей"""
         # Kafka consumer
         self.consumer = await self.exit_stack.enter_async_context(
-            await create_kafka_consumer()
+            await create_kafka_consumer(),
         )
 
         # Redis
@@ -69,8 +69,8 @@ class NotificationWorker:
             try:
                 message_data = json.loads(message.value.decode("utf-8"))
                 logger.info(
-                    f"Received message: {message_data['template_id']} "
-                    f"for user {message_data['user_id']}"
+                    (f"Received message: {message_data['template_id']} "
+                    f"for user {message_data['user_id']}")
                 )
 
                 await self._process_with_retry(message_data, message)
@@ -93,7 +93,8 @@ class NotificationWorker:
 
                 processing_time = time.time() - start_time
                 logger.info(
-                    f"Message processed successfully in {processing_time:.2f}s"
+                    (f"Message processed successfully "
+                     f"in {processing_time:.2f}s")
                 )
                 break
 
