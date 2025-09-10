@@ -52,13 +52,19 @@ class CampaignStatus(models.TextChoices):
 class Campaign(models.Model):
     name = models.CharField(_("Название"), max_length=128, unique=True)
     template = models.ForeignKey(
-        Template, on_delete=models.PROTECT, verbose_name=_("Шаблон"), related_name="campaigns"
+        Template,
+        on_delete=models.PROTECT,
+        verbose_name=_("Шаблон"),
+        related_name="campaigns",
     )
     delivery_method = models.CharField(
         _("Канал доставки"),
         max_length=16,
         choices=DeliveryMethod.choices,
-        help_text=_("На этапе админки просто прокидываем канал; персонализация на стороне воркера."),
+        help_text=_(
+            "На этапе админки просто прокидываем канал; "
+            "персонализация на стороне воркера."
+        ),
     )
     audience = models.CharField(
         _("Аудитория"),
@@ -110,6 +116,10 @@ class Campaign(models.Model):
         from django.core.exceptions import ValidationError
 
         if self.schedule_type == ScheduleType.DELAYED and not self.delay_seconds:
-            raise ValidationError(_("Для отложенной кампании укажите 'delay_seconds'."))
+            raise ValidationError(
+                _("Для отложенной кампании укажите 'delay_seconds'.")
+            )
         if self.schedule_type == ScheduleType.CRON and not self.cron:
-            raise ValidationError(_("Для повторяющейся кампании укажите 'cron'."))
+            raise ValidationError(
+                _("Для повторяющейся кампании укажите 'cron'.")
+            )

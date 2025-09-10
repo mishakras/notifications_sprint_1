@@ -1,6 +1,7 @@
 from django.apps import AppConfig
 import os
 
+
 class BroadcastsConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "broadcasts"

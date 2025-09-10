@@ -13,9 +13,11 @@ class RenderedMessage:
     body: str
 
 
-def render_template(subject_tpl: str,
-                    body_tpl: str,
-                    context: Mapping[str, Any]) -> RenderedMessage:
+def render_template(
+    subject_tpl: str,
+    body_tpl: str,
+    context: Mapping[str, Any],
+) -> RenderedMessage:
     """
     Рендерит subject/body c плейсхолдерами {{ first_name }} и т.п.
 
@@ -26,5 +28,6 @@ def render_template(subject_tpl: str,
     """
     subject = Template(subject_tpl).render(Context(context))
     body = Template(body_tpl).render(Context(context))
-    # Если дальше отдаёшь в email/sms — оставь как есть; для HTML можно mark_safe
+    # Если дальше отдаёшь в email/sms — оставь как есть.
+    # Для HTML допускается mark_safe.
     return RenderedMessage(subject=subject.strip(), body=mark_safe(body))
