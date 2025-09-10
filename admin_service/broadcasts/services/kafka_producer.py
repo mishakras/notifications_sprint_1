@@ -59,7 +59,7 @@ class _KafkaWrapper:
                     self._producer = KafkaProducer(
                         bootstrap_servers=self._bootstrap,
                         value_serializer=lambda v: json.dumps(v).encode(
-                            "utf-8"
+                            "utf-8",
                         ),
                         retries=5,
                         linger_ms=10,
@@ -83,7 +83,7 @@ class _KafkaWrapper:
 
             if self._producer is None:
                 raise last_err or RuntimeError(
-                    "KafkaProducer could not be created"
+                    "KafkaProducer could not be created",
                 )
 
             # проверяем/создаём топик
