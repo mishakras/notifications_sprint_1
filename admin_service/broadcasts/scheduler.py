@@ -90,7 +90,7 @@ def schedule_campaign(campaign_id: int) -> str:
             raise ValueError(
                 "Cron expression must have 5 fields: "
                 "'minute hour day month day_of_week'."
-            ),
+            )
         minute, hour, day, month, dow = parts
         trigger = CronTrigger(
             minute=minute,
