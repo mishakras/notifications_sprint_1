@@ -80,8 +80,7 @@ def schedule_campaign(campaign_id: int) -> str:
         trigger = DateTrigger(run_date=dj_timezone.now())
     elif campaign.schedule_type == ScheduleType.DELAYED:
         run_date = dj_timezone.now() + timedelta(
-            seconds=campaign.delay_seconds
-        )
+            seconds=campaign.delay_seconds),
         trigger = DateTrigger(run_date=run_date)
     elif campaign.schedule_type == ScheduleType.CRON:
         if not campaign.cron:
@@ -91,7 +90,7 @@ def schedule_campaign(campaign_id: int) -> str:
             raise ValueError(
                 "Cron expression must have 5 fields: "
                 "'minute hour day month day_of_week'."
-            )
+            ),
         minute, hour, day, month, dow = parts
         trigger = CronTrigger(
             minute=minute,
