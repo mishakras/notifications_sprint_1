@@ -80,8 +80,10 @@ def schedule_campaign(campaign_id: int) -> str:
         trigger = DateTrigger(run_date=dj_timezone.now())
     elif campaign.schedule_type == ScheduleType.DELAYED:
         run_date = dj_timezone.now() + timedelta(
-            seconds=campaign.delay_seconds)
+            seconds=campaign.delay_seconds,
+        )
         trigger = DateTrigger(run_date=run_date)
+
     elif campaign.schedule_type == ScheduleType.CRON:
         if not campaign.cron:
             raise ValueError("Cron expression is empty.")

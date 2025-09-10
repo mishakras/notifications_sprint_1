@@ -63,8 +63,10 @@ class Campaign(models.Model):
         choices=DeliveryMethod.choices,
         help_text=_(
             "На этапе админки просто прокидываем канал; "
-            "персонализация на стороне воркера."),
+            "персонализация на стороне воркера.",
+        ),
     )
+
     audience = models.CharField(
         _("Аудитория"),
         max_length=255,
@@ -92,7 +94,8 @@ class Campaign(models.Model):
         null=True,
         blank=True,
         help_text=_(
-            "Только для повторяющихся задач. " "Пример: '0 12 * * FRI'"),
+            "Только для повторяющихся задач. " "Пример: '0 12 * * FRI'",
+        ),
     )
     status = models.CharField(
         _("Статус"),
