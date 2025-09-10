@@ -18,19 +18,6 @@ class SMSSender:
             # Заглушка - в реальном проекте интеграция с SMS провайдером
             logger.info(f"SMS to {phone_number}: {message[:50]}...")
 
-            # Пример интеграции с провайдером:
-            # async with aiohttp.ClientSession() as session:
-            #     async with session.post(
-            #         self.api_url,
-            #         json={
-            #             "to": phone_number,
-            #             "message": message,
-            #             "api_key": self.api_key
-            #         }
-            #     ) as response:
-            #         if response.status == 200:
-            #             return True
-
             return True  # Заглушка для демонстрации
 
         except Exception as e:

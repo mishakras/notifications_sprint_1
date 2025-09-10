@@ -5,7 +5,7 @@ from typing import Any, Dict
 from src.core import logger
 from src.db.kafka import create_dlq_producer
 from src.services.auth.client import auth_client
-from src.services.email.sender import email_sender
+from src.services.email_service.sender import email_sender
 from src.utils.shortener import url_shortener
 from src.utils.template_engine import template_engine
 
@@ -43,7 +43,8 @@ class NotificationProcessor:
 
             # Рендеринг шаблона
             subject = template_engine.render_template(
-                template["subject"], context
+                template["subject"],
+                context,
             )
             body = template_engine.render_template(template["body"], context)
 
@@ -52,7 +53,10 @@ class NotificationProcessor:
 
             # Отправка уведомления
             success = await self.send_notification(
-                user_data, subject, body, message.get("notif_type")
+                user_data,
+                subject,
+                body,
+                message.get("notif_type"),
             )
 
             if not success:
@@ -82,23 +86,28 @@ class NotificationProcessor:
 
     @staticmethod
     async def send_notification(
-        user_data: Dict, subject: str, body: str, notif_type: str
+        user_data: Dict,
+        subject: str,
+        body: str,
+        notif_type: str,
     ) -> bool:
         """Отправка уведомления в зависимости от типа"""
         if notif_type == "email":
             return await email_sender.send_email(
-                user_data["email"], subject, body
+                user_data["email"],
+                subject,
+                body,
             )
         elif notif_type == "sms":
             # Реализация отправки SMS
             logger.info(
-                f"SMS to {user_data.get('phone')}: {subject} - {body[:50]}..."
+                f"SMS {user_data.get('phone')}: {subject} - {body[:50]}...",
             )
             return True
         elif notif_type == "push":
             # Реализация push-уведомления
             logger.info(
-                f"Push to {user_data['id']}: {subject} - {body[:50]}..."
+                f"Push to {user_data['id']}: {subject} - {body[:50]}...",
             )
             return True
         else:
@@ -114,7 +123,8 @@ class NotificationProcessor:
                 "timestamp": asyncio.get_event_loop().time(),
             }
             await self.dlq_producer.send(
-                self.dlq_topic, json.dumps(dlq_message).encode("utf-8")
+                self.dlq_topic,
+                json.dumps(dlq_message).encode("utf-8"),
             )
             logger.warning(f"Message sent to DLQ: {reason}")
 

@@ -14,7 +14,11 @@ class EmailSender:
         self.use_tls = settings.email.use_tls
 
     async def send_email(
-        self, to_email: str, subject: str, body: str, is_html: bool = False
+        self,
+        to_email: str,
+        subject: str,
+        body: str,
+        is_html: bool = False,
     ):
         """Отправка email"""
         if not self.username or not self.password:

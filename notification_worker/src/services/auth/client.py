@@ -40,7 +40,7 @@ class AuthClient:
                         return await response.json()
                     else:
                         logger.warning(
-                            f"User preferences not found for {user_id}"
+                            f"User preferences not found for {user_id}",
                         )
                         return {
                             "email": True,

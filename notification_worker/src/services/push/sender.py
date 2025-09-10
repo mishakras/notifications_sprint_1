@@ -15,18 +15,6 @@ class PushSender:
             # Заглушка - в реальном проекте интеграция с push-сервисом
             logger.info(f"Push to {user_id}: {title} - {body[:50]}...")
 
-            # Пример интеграции с Firebase:
-            # from firebase_admin import messaging
-            # message = messaging.Message(
-            #     notification=messaging.Notification(
-            #         title=title,
-            #         body=body,
-            #     ),
-            #     token=user_device_token,
-            #     data=data or {}
-            # )
-            # response = messaging.send(message)
-
             return True  # Заглушка для демонстрации
 
         except Exception as e:
