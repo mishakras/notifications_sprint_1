@@ -75,7 +75,8 @@ def schedule_campaign(campaign_id: int) -> str:
     if campaign.schedule_type == ScheduleType.IMMEDIATE:
         trigger = DateTrigger(run_date=dj_timezone.now())
     elif campaign.schedule_type == ScheduleType.DELAYED:
-        run_date = dj_timezone.now() + timedelta(seconds=campaign.delay_seconds)
+        run_date = (dj_timezone.now() +
+                    timedelta(seconds=campaign.delay_seconds))
         trigger = DateTrigger(run_date=run_date)
     elif campaign.schedule_type == ScheduleType.CRON:
         if not campaign.cron:
@@ -96,7 +97,8 @@ def schedule_campaign(campaign_id: int) -> str:
             timezone=settings.TIME_ZONE,
         )
     else:
-        raise ValueError(f"Unknown schedule_type: {campaign.schedule_type}")
+        raise ValueError(f"Unknown schedule_type: "
+                         f"{campaign.schedule_type}")
 
     add_kwargs = {
         "id": job_id,
@@ -106,7 +108,10 @@ def schedule_campaign(campaign_id: int) -> str:
         "replace_existing": True,
         "misfire_grace_time": 60 * 10,
     }
-    if any(name == "default" for name in scheduler._jobstores):  # noqa: SLF001
+    if any(
+            name == "default"
+            for name in scheduler._jobstores  # noqa: SLF001
+    ):
         add_kwargs["jobstore"] = "default"
 
     scheduler.add_job(

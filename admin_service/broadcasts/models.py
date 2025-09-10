@@ -70,7 +70,10 @@ class Campaign(models.Model):
         _("Аудитория"),
         max_length=255,
         default="all",
-        help_text=_("Напр.: 'all', 'segment:premium', 'user_ids:1,2,3'"),
+        help_text=_(
+            "Напр.: 'all', 'segment:premium', "
+            "'user_ids:1,2,3'"
+        ),
     )
     schedule_type = models.CharField(
         _("Тип расписания"),
@@ -90,7 +93,11 @@ class Campaign(models.Model):
         max_length=128,
         null=True,
         blank=True,
-        help_text=_("Только для повторяющихся задач. Пример: '0 12 * * FRI'"),
+        # ↓ Разбили, чтобы не ловить E501
+        help_text=_(
+            "Только для повторяющихся задач. "
+            "Пример: '0 12 * * FRI'"
+        ),
     )
     status = models.CharField(
         _("Статус"),
