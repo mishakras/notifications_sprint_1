@@ -26,9 +26,9 @@ def get_scheduler() -> BackgroundScheduler:
     """
     Инициализирует/кеширует APScheduler.
 
-    Если выставлен DISABLE_SCHEDULER=1, создаём планировщик без jobstore
-    и не запускаем фоновые задачи — это нужно, чтобы миграции проходили
-    без ошибок по отсутствующим таблицам.
+    Если выставлен DISABLE_SCHEDULER=1, создаём планировщик без
+    jobstore'а и не запускаем фоновые задачи — это нужно, чтобы
+    миграции проходили без ошибок по отсутствующим таблицам.
     """
     global _scheduler
     if _scheduler is not None:
@@ -63,7 +63,7 @@ def schedule_campaign(campaign_id: int) -> str:
     """
     if os.getenv("DISABLE_SCHEDULER"):
         logger.info(
-            "Skip scheduling campaign %s: DISABLE_SCHEDULER=1",
+            "Skip scheduling campaign %s because DISABLE_SCHEDULER=1 is set.",
             campaign_id,
         )
         return ""
@@ -84,7 +84,7 @@ def schedule_campaign(campaign_id: int) -> str:
         if len(parts) != 5:
             raise ValueError(
                 "Cron expression must have 5 fields: "
-                "'minute hour day month day_of_week'."
+                "'minute hour day month day_of_week'.",
             )
         minute, hour, day, month, dow = parts
         trigger = CronTrigger(
@@ -105,8 +105,9 @@ def schedule_campaign(campaign_id: int) -> str:
         "coalesce": True,
         "replace_existing": True,
         "misfire_grace_time": 60 * 10,
-        "jobstore": "default",
     }
+    if any(name == "default" for name in scheduler._jobstores):  # noqa: SLF001
+        add_kwargs["jobstore"] = "default"
 
     scheduler.add_job(
         run_campaign_job,

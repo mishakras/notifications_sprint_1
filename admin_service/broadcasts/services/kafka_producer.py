@@ -34,7 +34,6 @@ class _KafkaWrapper:
         if self._producer or self._import_error:
             return
         try:
-            # ЛЕНИВЫЙ импорт здесь, а не на уровне модуля:
             from kafka import KafkaProducer  # type: ignore
 
             self._producer = KafkaProducer(
@@ -49,7 +48,6 @@ class _KafkaWrapper:
                 self._topic,
             )
         except Exception as exc:  # noqa: BLE001
-            # Запоминаем ошибку, чтобы поднять её при фактической отправке.
             self._import_error = exc
             logger.exception("Failed to initialize KafkaProducer")
 
@@ -59,7 +57,7 @@ class _KafkaWrapper:
         if self._import_error:
             raise RuntimeError(
                 "Kafka недоступна: проверь пакет kafka-python/six или "
-                "переключись на REST-режим."
+                "переключись на REST-режим.",
             ) from self._import_error
 
         assert self._producer is not None
