@@ -63,15 +63,16 @@ class Campaign(models.Model):
         choices=DeliveryMethod.choices,
         help_text=_(
             "На этапе админки просто прокидываем канал; "
-            "персонализация на стороне воркера."),
+            "персонализация на стороне воркера."
+        ),
     )
     audience = models.CharField(
         _("Аудитория"),
         max_length=255,
         default="all",
         help_text=_(
-            "Напр.: 'all', 'segment:premium', "
-            "'user_ids:1,2,3'"),
+            "Напр.: 'all', 'segment:premium', 'user_ids:1,2,3'",
+        ),
     )
     schedule_type = models.CharField(
         _("Тип расписания"),
@@ -91,10 +92,9 @@ class Campaign(models.Model):
         max_length=128,
         null=True,
         blank=True,
-        # ↓ Разбили, чтобы не ловить E501
         help_text=_(
-            "Только для повторяющихся задач. "
-            "Пример: '0 12 * * FRI'"),
+            "Только для повторяющихся задач. " "Пример: '0 12 * * FRI'"
+        ),
     )
     status = models.CharField(
         _("Статус"),
@@ -117,11 +117,12 @@ class Campaign(models.Model):
     def clean(self) -> None:
         from django.core.exceptions import ValidationError
 
-        if (self.schedule_type == ScheduleType.DELAYED
-                and not self.delay_seconds):
+        if (
+            self.schedule_type == ScheduleType.DELAYED
+            and not self.delay_seconds
+        ):
             raise ValidationError(
-                _("Для отложенной кампании "
-                  "укажите 'delay_seconds'."),
+                _("Для отложенной кампании укажите 'delay_seconds'."),
             )
         if self.schedule_type == ScheduleType.CRON and not self.cron:
             raise ValidationError(

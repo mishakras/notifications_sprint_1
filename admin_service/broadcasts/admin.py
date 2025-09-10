@@ -33,16 +33,11 @@ class CampaignAdmin(admin.ModelAdmin):
     actions = ("run_now", "plan_selected")
 
     fieldsets = (
-        (None, {"fields": ("name",
-                           "template",
-                           "delivery_method",
-                           "audience")}),
         (
-            "Расписание",
-            {"fields": ("schedule_type",
-                        "delay_seconds",
-                        "cron")},
+            None,
+            {"fields": ("name", "template", "delivery_method", "audience")},
         ),
+        ("Расписание", {"fields": ("schedule_type", "delay_seconds", "cron")}),
         ("Служебные", {"fields": ("status",)}),
     )
 
@@ -54,7 +49,6 @@ class CampaignAdmin(admin.ModelAdmin):
         change: bool,
     ) -> None:
         super().save_model(request, obj, form, change)
-        # После сохранения — поставить в планировщик/запустить
         schedule_campaign(obj.id)
 
     @admin.action(description="Запустить сейчас")

@@ -26,9 +26,8 @@ def get_scheduler() -> BackgroundScheduler:
     """
     Инициализирует/кеширует APScheduler.
 
-    Если выставлен DISABLE_SCHEDULER=1, создаём планировщик без
-    jobstore'а и не запускаем фоновые задачи — это нужно, чтобы
-    миграции проходили без ошибок по отсутствующим таблицам.
+    Если DISABLE_SCHEDULER=1, не подключаем jobstore и не стартуем фоновые
+    задачи — чтобы миграции проходили без ошибок по отсутствующим таблицам.
     """
     global _scheduler
     if _scheduler is not None:
@@ -56,6 +55,11 @@ def get_scheduler() -> BackgroundScheduler:
     return scheduler
 
 
+def start_scheduler() -> None:
+    """Вызывается из AppConfig.ready()."""
+    get_scheduler()
+
+
 def schedule_campaign(campaign_id: int) -> str:
     """
     Ставит кампанию в APScheduler по её типу расписания.
@@ -75,8 +79,9 @@ def schedule_campaign(campaign_id: int) -> str:
     if campaign.schedule_type == ScheduleType.IMMEDIATE:
         trigger = DateTrigger(run_date=dj_timezone.now())
     elif campaign.schedule_type == ScheduleType.DELAYED:
-        run_date = (dj_timezone.now() +
-                    timedelta(seconds=campaign.delay_seconds))
+        run_date = dj_timezone.now() + timedelta(
+            seconds=campaign.delay_seconds
+        )
         trigger = DateTrigger(run_date=run_date)
     elif campaign.schedule_type == ScheduleType.CRON:
         if not campaign.cron:
@@ -85,7 +90,7 @@ def schedule_campaign(campaign_id: int) -> str:
         if len(parts) != 5:
             raise ValueError(
                 "Cron expression must have 5 fields: "
-                "'minute hour day month day_of_week'.",
+                "'minute hour day month day_of_week'."
             )
         minute, hour, day, month, dow = parts
         trigger = CronTrigger(
@@ -97,8 +102,7 @@ def schedule_campaign(campaign_id: int) -> str:
             timezone=settings.TIME_ZONE,
         )
     else:
-        raise ValueError(f"Unknown schedule_type: "
-                         f"{campaign.schedule_type}")
+        raise ValueError(f"Unknown schedule_type: {campaign.schedule_type}")
 
     add_kwargs = {
         "id": job_id,
@@ -108,10 +112,7 @@ def schedule_campaign(campaign_id: int) -> str:
         "replace_existing": True,
         "misfire_grace_time": 60 * 10,
     }
-    if any(
-            name == "default"
-            for name in scheduler._jobstores  # noqa: SLF001
-    ):
+    if any(name == "default" for name in scheduler._jobstores):  # noqa: SLF001
         add_kwargs["jobstore"] = "default"
 
     scheduler.add_job(
@@ -129,9 +130,6 @@ def schedule_campaign(campaign_id: int) -> str:
 
 
 def delete_old_job_executions(max_age: int = 60 * 60 * 24) -> None:
-    """
-    Удаляет записи об исполнениях задач старше max_age секунд
-    (по умолчанию — старше суток).
-    """
+    """Удаляет записи об исполнениях задач старше max_age секунд."""
     close_old_connections()
     DjangoJobExecution.objects.delete_old_job_executions(max_age)
