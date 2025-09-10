@@ -117,7 +117,8 @@ class Campaign(models.Model):
     def clean(self) -> None:
         from django.core.exceptions import ValidationError
 
-        if self.schedule_type == ScheduleType.DELAYED and not self.delay_seconds:
+        if (self.schedule_type == ScheduleType.DELAYED
+                and not self.delay_seconds):
             raise ValidationError(
                 _("Для отложенной кампании "
                   "укажите 'delay_seconds'."),
