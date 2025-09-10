@@ -71,8 +71,8 @@ class NotificationWorker:
                 logger.info(
                     (
                         f"Received message: {message_data['template_id']} ",
-                        f"for user {message_data['user_id']}"
-                    )
+                        f"for user {message_data['user_id']}",
+                    ),
                 )
 
                 await self._process_with_retry(message_data, message)
@@ -95,8 +95,10 @@ class NotificationWorker:
 
                 processing_time = time.time() - start_time
                 logger.info(
-                    (f"Message processed successfully ",
-                     f"in {processing_time:.2f}s")
+                    (
+                        "Message processed successfully ",
+                        f"in {processing_time:.2f}s",
+                    ),
                 )
                 break
 
@@ -107,8 +109,8 @@ class NotificationWorker:
                     logger.error(
                         (
                             "Message failed after ",
-                            f"{settings.max_retries} attempts"
-                        )
+                            f"{settings.max_retries} attempts",
+                        ),
                     )
                     await self.consumer.commit()  # Пропускаем
                 else:

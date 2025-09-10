@@ -27,7 +27,7 @@ class URLShortener:
                         )
                     else:
                         logger.warning(
-                            f"Shortener service error: {response.status}"
+                            f"Shortener service error: {response.status}",
                         )
                         return original_url
         except Exception as e:
