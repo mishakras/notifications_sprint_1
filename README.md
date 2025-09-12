@@ -1,5 +1,3 @@
-[![Lint and Test with Matrix & Telegram](https://github.com/Koodt/Async_API_sprint_1_team_repo/actions/workflows/tests_and_linters.yml/badge.svg)](https://github.com/Koodt/Async_API_sprint_1_team_repo/actions/workflows/tests_and_linters.yml)
-
 # Проектная работа группы 2
 
 ## Описание проекта
@@ -11,8 +9,8 @@ API-сервис, разработанный на FastAPI для управле�
 
 ### Клонируем репозиторий
 
-```Bash
-git@github.com:Koodt/Async_API_sprint_1_team_repo.git
+```Bash 
+git@github.com:mishakras/notifications_sprint_1.git
 cd Async_API_sprint_1_team_repo
 ```
 
