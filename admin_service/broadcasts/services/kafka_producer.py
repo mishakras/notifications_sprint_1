@@ -1,10 +1,9 @@
-# admin_service/broadcasts/services/kafka_producer.py
 from __future__ import annotations
 
 import json
 import logging
 import time
-from typing import Any, Optional
+from typing import Any
 
 from django.conf import settings
 
@@ -13,12 +12,14 @@ logger = logging.getLogger(__name__)
 
 class _KafkaWrapper:
     """
-    Ленивая обёртка вокруг KafkaProducer, чтобы не падать на импорте при
-    старте Django (когда окружение Kafka ещё не готово).
+    Ленивая обёртка вокруг KafkaProducer.
+
+    Нужна, чтобы не падать на импорте при старте Django, когда окружение
+    Kafka ещё не готово.
     """
 
     def __init__(self) -> None:
-        self._producer: Optional[Any] = None
+        self._producer: Any | None = None
         self._topic: str = getattr(
             settings,
             "KAFKA_TOPIC",
@@ -32,11 +33,13 @@ class _KafkaWrapper:
         self._startup_timeout: int = int(
             getattr(settings, "KAFKA_STARTUP_TIMEOUT", 60),
         )
-        self._import_error: Optional[Exception] = None
+        self._import_error: Exception | None = None
 
     def _ensure(self) -> None:
-        """Лениво создаёт KafkaProducer один раз,
-        с ретраями и автосозданием топика."""
+        """
+        Лениво создаёт KafkaProducer один раз, с ретраями и
+        автосозданием топика.
+        """
         if self._producer or self._import_error:
             return
 
@@ -52,7 +55,7 @@ class _KafkaWrapper:
             # ждём, пока брокеры поднимутся (экспоненциальный backoff)
             deadline = time.time() + self._startup_timeout
             backoff = 0.5
-            last_err: Optional[Exception] = None
+            last_err: Exception | None = None
 
             while time.time() < deadline:
                 try:
@@ -70,12 +73,12 @@ class _KafkaWrapper:
                         self._topic,
                     )
                     break
-                except NoBrokersAvailable as e:  # брокер ещё не доступен
+                except NoBrokersAvailable as e:
                     last_err = e
                     time.sleep(backoff)
                     backoff = min(backoff * 2, 5.0)
                 except Exception as e:  # noqa: BLE001
-                    # любая иная ошибка — тоже подождём, но залогируем
+                    # любая иная ошибка — подождём, но залогируем
                     last_err = e
                     logger.warning("Kafka init attempt failed: %s", e)
                     time.sleep(backoff)
@@ -87,7 +90,7 @@ class _KafkaWrapper:
                 )
 
             # проверяем/создаём топик
-            admin = None
+            admin: Any | None = None
             try:
                 admin = KafkaAdminClient(
                     bootstrap_servers=self._bootstrap,
@@ -105,7 +108,7 @@ class _KafkaWrapper:
             except TopicAlreadyExistsError:
                 logger.debug("Kafka topic already exists: %s", self._topic)
             except Exception as e:  # noqa: BLE001
-                # Не критично для публикации — только предупредим
+                # не критично для публикации — только предупредим
                 logger.warning("Topic ensure failed: %s", e)
             finally:
                 if admin is not None:
@@ -123,8 +126,8 @@ class _KafkaWrapper:
         self._ensure()
         if self._import_error:
             raise RuntimeError(
-                "Kafka недоступна: проверь пакет kafka-python/six или "
-                "переключись на REST-режим.",
+                "Kafka недоступна: проверь пакет kafka-python/six "
+                "или переключись на REST-режим.",
             ) from self._import_error
 
         assert self._producer is not None
