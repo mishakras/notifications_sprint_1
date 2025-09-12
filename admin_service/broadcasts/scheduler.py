@@ -3,7 +3,6 @@ from __future__ import annotations
 import logging
 import os
 from datetime import timedelta
-from typing import Optional
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
@@ -19,7 +18,7 @@ from .tasks import run_campaign_job
 
 logger = logging.getLogger(__name__)
 
-_scheduler: Optional[BackgroundScheduler] = None
+_scheduler: BackgroundScheduler | None = None
 
 
 def get_scheduler() -> BackgroundScheduler:
@@ -83,7 +82,6 @@ def schedule_campaign(campaign_id: int) -> str:
             seconds=campaign.delay_seconds,
         )
         trigger = DateTrigger(run_date=run_date)
-
     elif campaign.schedule_type == ScheduleType.CRON:
         if not campaign.cron:
             raise ValueError("Cron expression is empty.")
@@ -105,7 +103,7 @@ def schedule_campaign(campaign_id: int) -> str:
     else:
         raise ValueError(f"Unknown schedule_type: {campaign.schedule_type}")
 
-    add_kwargs = {
+    add_kwargs: dict[str, object] = {
         "id": job_id,
         "args": [campaign_id],
         "max_instances": 1,
