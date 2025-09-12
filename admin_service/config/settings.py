@@ -35,6 +35,7 @@ include(
     "components/application.py",
     "components/internationalization.py",
     "components/localization.py",
+    "components/messaging.py",
 )
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -50,7 +51,6 @@ STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = config["SECRET_KEY"]
 
-AUTH_USER_MODEL = "movies.User"
 AUTH_API_URL = config["AUTH_API_URL"]
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -98,5 +98,4 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
-    "movies.auth.EmailAuthBackend",
 ]
