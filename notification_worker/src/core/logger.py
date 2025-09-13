@@ -1,7 +1,7 @@
 import logging
 import sys
 
-from python_logstash import LogstashHandler
+from logstash import LogstashHandler
 from src.core.config import settings
 
 

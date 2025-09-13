@@ -444,6 +444,17 @@ services:
       fastapi_network:
         ipv4_address: 172.28.0.152
 
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: mailpit
+    restart: unless-stopped
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+    networks:
+      fastapi_network:
+        ipv4_address: 172.28.0.207
+
   notification_worker:
     build:
       context: .
@@ -451,14 +462,14 @@ services:
     env_file:
       - ./common/.env
     environment:
-      - KAFKA_HOST=kafka
-      - KAFKA_PORT=9092
-      - AUTH_SERVICE_URL=http://auth_service:8000
-      - SHORTENER_URL=http://shortener:8888
+      - DOCKER=true
     depends_on:
-      - kafka
-      - auth_service
+      - kafka-0
+      - kafka-1
+      - kafka-2
+      - auth-service
       - shortener
+      - mailpit
     restart: unless-stopped
     networks:
       fastapi_network:

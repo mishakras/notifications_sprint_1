@@ -4,7 +4,10 @@ import signal
 import time
 from contextlib import AsyncExitStack
 
+from aiokafka import AIOKafkaConsumer
+
 from src.core import logger, settings
+from src.core.constants import Environment
 from src.db.kafka import create_kafka_consumer
 from src.db.redis import close_redis, get_redis
 from src.services.processing.processor import notification_processor
@@ -18,19 +21,18 @@ class NotificationWorker:
         self.exit_stack = AsyncExitStack()
 
     async def start(self):
-        """Запуск воркера"""
-        logger.info("Starting notification worker...")
+        logger.info(
+            (
+                "Starting notification worker in ",
+                f"{settings.environment} environment...",
+            ),
+        )
 
         try:
-            # Инициализация зависимостей
             await self._initialize_dependencies()
-
-            # Обработка сигналов для graceful shutdown
             self._setup_signal_handlers()
 
             logger.info("Notification worker started successfully")
-
-            # Основной цикл обработки сообщений
             await self._process_messages()
 
         except Exception as e:
@@ -40,28 +42,26 @@ class NotificationWorker:
             await self.shutdown()
 
     async def _initialize_dependencies(self):
-        """Инициализация всех зависимостей"""
-        # Kafka consumer
         self.consumer = await self.exit_stack.enter_async_context(
             await create_kafka_consumer(),
         )
-
-        # Redis
         self.redis = await get_redis()
-
-        # Notification processor
         await notification_processor.initialize()
+
+        if settings.environment == Environment.DEVELOPMENT:
+            logger.info("Development mode: Using Mailpit for email testing")
+            logger.info(f"Mailpit UI: http://localhost:8025")
+            logger.info(f"Kafka: {settings.kafka.server}")
+            logger.info(f"Auth service: {settings.auth.url}")
 
         self.running = True
 
     def _setup_signal_handlers(self):
-        """Настройка обработчиков сигналов"""
         loop = asyncio.get_event_loop()
         for sig in (signal.SIGTERM, signal.SIGINT):
             loop.add_signal_handler(sig, self.stop)
 
     async def _process_messages(self):
-        """Основной цикл обработки сообщений"""
         async for message in self.consumer:
             if not self.running:
                 break
@@ -70,8 +70,8 @@ class NotificationWorker:
                 message_data = json.loads(message.value.decode("utf-8"))
                 logger.info(
                     (
-                        f"Received message: {message_data['template_id']} ",
-                        f"for user {message_data['user_id']}",
+                        f"Received message: {message_data['template_id']}",
+                        f" for user {message_data['user_id']}",
                     ),
                 )
 
@@ -84,8 +84,11 @@ class NotificationWorker:
                 logger.error(f"Unexpected error processing message: {str(e)}")
                 continue
 
-    async def _process_with_retry(self, message_data: dict, kafka_message):
-        """Обработка сообщения с retry логикой"""
+    async def _process_with_retry(
+        self,
+        message_data,
+        kafka_message,
+    ):
         start_time = time.time()
 
         for attempt in range(settings.max_retries):
@@ -96,8 +99,8 @@ class NotificationWorker:
                 processing_time = time.time() - start_time
                 logger.info(
                     (
-                        "Message processed successfully ",
-                        f"in {processing_time:.2f}s",
+                        "Message processed successfully",
+                        f" in {processing_time:.2f}s",
                     ),
                 )
                 break
@@ -112,17 +115,15 @@ class NotificationWorker:
                             f"{settings.max_retries} attempts",
                         ),
                     )
-                    await self.consumer.commit()  # Пропускаем
+                    await self.consumer.commit()
                 else:
                     await asyncio.sleep(settings.retry_delay * (attempt + 1))
 
     def stop(self):
-        """Остановка воркера"""
         logger.info("Stopping notification worker...")
         self.running = False
 
     async def shutdown(self):
-        """Graceful shutdown"""
         logger.info("Shutting down notification worker...")
 
         try:
