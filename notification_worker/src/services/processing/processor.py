@@ -168,7 +168,8 @@ class NotificationProcessor:
             },
         }
         return fallback_templates.get(
-            template_type, fallback_templates["email"],
+            template_type,
+            fallback_templates["email"],
         )
 
     @staticmethod
@@ -181,7 +182,9 @@ class NotificationProcessor:
         try:
             if notif_type == "email" and user_data.get("email"):
                 return await email_sender.send_email(
-                    user_data["email"], subject, body,
+                    user_data["email"],
+                    subject,
+                    body,
                 )
 
             elif notif_type == "sms" and user_data.get("phone"):
@@ -189,7 +192,9 @@ class NotificationProcessor:
 
             elif notif_type == "push":
                 return await push_sender.send_push(
-                    user_data["id"], subject, body,
+                    user_data["id"],
+                    subject,
+                    body,
                 )
 
             else:
@@ -218,7 +223,8 @@ class NotificationProcessor:
                 "environment": settings.environment,
             }
             await self.dlq_producer.send(
-                self.dlq_topic, json.dumps(dlq_message).encode("utf-8"),
+                self.dlq_topic,
+                json.dumps(dlq_message).encode("utf-8"),
             )
             logger.warning(f"Message sent to DLQ: {reason}")
 
