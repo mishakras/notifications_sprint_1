@@ -6,8 +6,8 @@ from src.core.constants import Environment
 from src.db.kafka import create_dlq_producer
 from src.services.auth.client import auth_client
 from src.services.email_service.sender import email_sender
-from src.services.sms.sender import sms_sender
 from src.services.push.sender import push_sender
+from src.services.sms.sender import sms_sender
 from src.utils.shortener import url_shortener
 from src.utils.template_engine import template_engine
 
@@ -57,7 +57,7 @@ class NotificationProcessor:
                     message.get(
                         "notif_type",
                         "email",
-                    )
+                    ),
                 )
 
             context = await self.prepare_template_context(
@@ -91,7 +91,7 @@ class NotificationProcessor:
             if success:
                 logger.info(
                     (
-                        f"Notification sent successfully",
+                        "Notification sent successfully",
                         f" to user {message['user_id']}",
                     ),
                 )
@@ -168,7 +168,7 @@ class NotificationProcessor:
             },
         }
         return fallback_templates.get(
-            template_type, fallback_templates["email"]
+            template_type, fallback_templates["email"],
         )
 
     @staticmethod
@@ -181,7 +181,7 @@ class NotificationProcessor:
         try:
             if notif_type == "email" and user_data.get("email"):
                 return await email_sender.send_email(
-                    user_data["email"], subject, body
+                    user_data["email"], subject, body,
                 )
 
             elif notif_type == "sms" and user_data.get("phone"):
@@ -189,13 +189,13 @@ class NotificationProcessor:
 
             elif notif_type == "push":
                 return await push_sender.send_push(
-                    user_data["id"], subject, body
+                    user_data["id"], subject, body,
                 )
 
             else:
                 logger.warning(
                     (
-                        f"Unsupported notification type or ",
+                        "Unsupported notification type or ",
                         f"missing recipient: {notif_type}",
                     ),
                 )
@@ -218,7 +218,7 @@ class NotificationProcessor:
                 "environment": settings.environment,
             }
             await self.dlq_producer.send(
-                self.dlq_topic, json.dumps(dlq_message).encode("utf-8")
+                self.dlq_topic, json.dumps(dlq_message).encode("utf-8"),
             )
             logger.warning(f"Message sent to DLQ: {reason}")
 

@@ -4,11 +4,8 @@ import signal
 import time
 from contextlib import AsyncExitStack
 
-from aiokafka import AIOKafkaConsumer
-
 from src.core import logger, settings
 from src.core.constants import Environment
-from src.db.kafka import create_kafka_consumer
 from src.db.redis import close_redis, get_redis
 from src.services.processing.processor import notification_processor
 
@@ -50,7 +47,7 @@ class NotificationWorker:
 
         if settings.environment == Environment.DEVELOPMENT:
             logger.info("Development mode: Using Mailpit for email testing")
-            logger.info(f"Mailpit UI: http://localhost:8025")
+            logger.info("Mailpit UI: http://localhost:8025")
             logger.info(f"Kafka: {settings.kafka.server}")
             logger.info(f"Auth service: {settings.auth.url}")
 

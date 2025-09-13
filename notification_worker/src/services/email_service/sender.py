@@ -1,8 +1,8 @@
-import aiosmtplib
-from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from email.utils import formataddr
 
+import aiosmtplib
 from src.core import logger, settings
 from src.core.constants import Environment
 
@@ -53,7 +53,7 @@ class EmailSender:
                 )
 
             logger.info(
-                f"Email sent to {to_email} via {self.host}:{self.port}"
+                f"Email sent to {to_email} via {self.host}:{self.port}",
             )
             return True
 
