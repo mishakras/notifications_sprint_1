@@ -1,6 +1,5 @@
 import asyncio
 import json
-from typing import Any, Dict
 
 from src.core import logger
 from src.db.kafka import create_dlq_producer
@@ -18,7 +17,7 @@ class NotificationProcessor:
     async def initialize(self):
         self.dlq_producer = await create_dlq_producer()
 
-    async def process_message(self, message: Dict[str, Any]):
+    async def process_message(self, message: dict):
         """Обработка одного сообщения из Kafka"""
         try:
             # Получение данных пользователя
@@ -67,7 +66,7 @@ class NotificationProcessor:
             await self.send_to_dlq(message, "PROCESSING_ERROR")
 
     @staticmethod
-    async def get_template(template_id: str) -> Dict[str, Any]:
+    async def get_template(template_id: str) -> dict:
         """Получение шаблона уведомления"""
         # Заглушка - в реальном проекте получать из БД
         templates = {
@@ -86,7 +85,7 @@ class NotificationProcessor:
 
     @staticmethod
     async def send_notification(
-        user_data: Dict,
+        user_data: dict,
         subject: str,
         body: str,
         notif_type: str,
@@ -114,7 +113,7 @@ class NotificationProcessor:
             logger.warning(f"Unknown notification type: {notif_type}")
             return False
 
-    async def send_to_dlq(self, message: Dict, reason: str):
+    async def send_to_dlq(self, message: dict, reason: str):
         """Отправка сообщения в Dead Letter Queue"""
         if self.dlq_producer:
             dlq_message = {

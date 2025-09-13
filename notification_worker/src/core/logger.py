@@ -1,12 +1,11 @@
 import logging
 import sys
-from typing import Optional
 
 from python_logstash import LogstashHandler
 from src.core.config import settings
 
 
-def setup_logger(name: Optional[str] = None) -> logging.Logger:
+def setup_logger(name: str | None = None) -> logging.Logger:
     """Настройка логгера с Logstash."""
 
     _logger = logging.getLogger(name or "notification_worker")
