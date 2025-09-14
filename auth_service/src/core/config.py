@@ -1,4 +1,5 @@
 import os
+from enum import StrEnum
 from pathlib import Path
 from uuid import UUID
 
@@ -9,6 +10,13 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 config = {
     **dotenv_values("/opt/common/.env"),
 }
+
+
+class Environment(StrEnum):
+    DEVELOPMENT = "development"
+    STAGING = "staging"
+    PRODUCTION = "production"
+    TEST = "test"
 
 
 class AppSettings(BaseModel):
@@ -23,7 +31,7 @@ class AppSettings(BaseModel):
     request_limit_per_minute: int = int(
         config.get("REQUEST_LIMIT_PER_MINUTE", 20),
     )
-    environment: str = config.get("ENVIRONMENT", "develop")
+    environment: str = config.get("ENVIRONMENT", Environment.DEVELOPMENT)
     zero_request_id: UUID = UUID("00000000-0000-0000-0000-000000000000")
 
 
@@ -60,6 +68,7 @@ class Settings(BaseSettings):
     local: LocalSettings = LocalSettings()
     redis: RedisSettings = RedisSettings()
     logstash: LogstashSettings = LogstashSettings()
+    envEnum: Environment = Environment
 
 
 settings = Settings()

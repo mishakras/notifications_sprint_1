@@ -1,4 +1,6 @@
 import datetime
+from contextlib import asynccontextmanager
+from typing import AsyncGenerator
 
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse, ORJSONResponse
@@ -61,8 +63,19 @@ def configure_tracer() -> None:
 configure_tracer()
 
 
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    redis.redis = Redis(
+        host=settings.redis.redis_host,
+        port=settings.redis.redis_port,
+    )
+    yield
+    await redis.redis.close()
+
+
 app = FastAPI(
     title=settings.app.title,
+    lifespan=lifespan,
     description=description,
     docs_url="/api/v1/auth/openapi",
     openapi_url="/api/v1/auth/openapi.json",
@@ -114,7 +127,7 @@ async def before_request(request: Request, call_next):
     request_id = request.headers.get("X-Request-Id")
 
     if not request_id:
-        if settings.app.environment != "develop":
+        if settings.app.environment != settings.envEnum.DEVELOPMENT:
             return ORJSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 content={"detail": "X-Request-Id is required"},
@@ -127,18 +140,6 @@ async def before_request(request: Request, call_next):
     response.headers["X-Request-Id"] = request_id
     return response
 
-
-@app.on_event("startup")
-async def startup():
-    redis.redis = Redis(
-        host=settings.redis.redis_host,
-        port=settings.redis.redis_port,
-    )
-
-
-@app.on_event("shutdown")
-async def shutdown():
-    await redis.redis.close()
 
 
 app.include_router(users.router, prefix="/api/v1/auth", tags=["auth"])
