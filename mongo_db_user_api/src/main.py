@@ -122,7 +122,6 @@ async def before_request(request: Request, call_next):
     return response
 
 
-
 app.include_router(
     film_scores.router,
     prefix="/api/v1/film_scores",

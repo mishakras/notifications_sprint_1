@@ -101,7 +101,6 @@ FastAPIInstrumentor.instrument_app(app)
 
 @app.middleware("http")
 async def rate_limit_middleware(request: Request, call_next):
-
     async def is_rate_limited(user_id: str) -> bool:
         redis: Redis = await get_redis()
         pipe = redis.pipeline()
@@ -141,7 +140,6 @@ async def before_request(request: Request, call_next):
     return response
 
 
-
 app.include_router(users.router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(roles.router, prefix="/api/v1/auth/roles", tags=["roles"])
 app.include_router(
@@ -153,8 +151,8 @@ app.include_router(
 
 @app.exception_handler(CustomHTTPException)
 async def custom_http_exception_handler(
-    request: Request,
-    exc: CustomHTTPException,
+        request: Request,
+        exc: CustomHTTPException,
 ):
     return JSONResponse(
         status_code=exc.status_code,
