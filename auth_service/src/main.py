@@ -151,8 +151,8 @@ app.include_router(
 
 @app.exception_handler(CustomHTTPException)
 async def custom_http_exception_handler(
-        request: Request,
-        exc: CustomHTTPException,
+    request: Request,
+    exc: CustomHTTPException,
 ):
     return JSONResponse(
         status_code=exc.status_code,
