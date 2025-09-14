@@ -36,14 +36,14 @@ class DatabaseHelper:
             expire_on_commit=False,
         )
 
-    def get_scope_session(self):
+    def get_scope_session(self) -> async_scoped_session:
         return async_scoped_session(
             session_factory=self.session_factory,
             scopefunc=current_task,
         )
 
     @asynccontextmanager
-    async def get_db_session(self):
+    async def get_db_session(self) -> AsyncSession:
         from sqlalchemy import exc
 
         session: AsyncSession = self.session_factory()

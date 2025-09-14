@@ -7,7 +7,7 @@ from auth_service.src.auth.auth import decode_token
 
 class ConnectionManager:
     def __init__(self):
-        self.active_connections: dict[WebSocket] = {}
+        self.active_connections: dict[str:WebSocket] = {}
 
     async def connect(self, websocket: WebSocket):
         await websocket.accept()
@@ -18,7 +18,6 @@ class ConnectionManager:
         try:
             user = decode_token(token)
             self.active_connections[user["sub"]] = websocket
-            self.active_connections["test"] = websocket
             try:
                 while True:
                     await websocket.receive_json()

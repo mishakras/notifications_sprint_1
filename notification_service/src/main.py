@@ -1,3 +1,6 @@
+from contextlib import asynccontextmanager
+from typing import AsyncGenerator
+
 from fastapi import FastAPI, Request, status
 from fastapi.responses import ORJSONResponse
 from kafka import KafkaAdminClient
@@ -6,6 +9,40 @@ from kafka.admin import NewTopic
 from notification_service.src.api.notif.v1 import notif
 from notification_service.src.core import settings
 from notification_service.src.db.kafka import close_producer, get_producer
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    while True:
+        try:
+            admin_client = KafkaAdminClient(
+                bootstrap_servers=settings.kafka.host
+                                  + ":"
+                                  + settings.kafka.port,
+                api_version=(0, 9),
+            )
+
+            topic_list = []
+            topic_list_exists = admin_client.list_topics()
+            if "notifications" not in topic_list_exists:
+                topic_list.append(
+                    NewTopic(
+                        name="notifications",
+                        num_partitions=3,
+                        replication_factor=2,
+                    ),
+                )
+                admin_client.create_topics(
+                    new_topics=topic_list,
+                    validate_only=False,
+                )
+            break
+        except Exception:
+            pass
+    await get_producer()
+    yield
+    await close_producer()
+
 
 app = FastAPI(
     title=settings.app.title,
@@ -44,42 +81,6 @@ async def before_request(request: Request, call_next):
 
     response.headers["X-Request-Id"] = request_id
     return response
-
-
-@app.on_event("startup")
-async def startup():
-    while True:
-        try:
-            admin_client = KafkaAdminClient(
-                bootstrap_servers=settings.kafka.host
-                + ":"
-                + settings.kafka.port,
-                api_version=(0, 9),
-            )
-
-            topic_list = []
-            topic_list_exists = admin_client.list_topics()
-            if "notifications" not in topic_list_exists:
-                topic_list.append(
-                    NewTopic(
-                        name="notifications",
-                        num_partitions=3,
-                        replication_factor=2,
-                    ),
-                )
-                admin_client.create_topics(
-                    new_topics=topic_list,
-                    validate_only=False,
-                )
-            break
-        except:
-            pass
-    await get_producer()
-
-
-@app.on_event("shutdown")
-async def shutdown():
-    await close_producer()
 
 
 app.include_router(notif.router, prefix="/api/v1/notif", tags=["notif"])

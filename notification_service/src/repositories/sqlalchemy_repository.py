@@ -1,4 +1,4 @@
-from typing import Generic, Optional, Type, TypeVar
+from typing import Generic, Type, TypeVar
 
 from pydantic import BaseModel
 from sqlalchemy import delete, select, update
@@ -62,7 +62,7 @@ class SqlAlchemyRepository(
             await session.execute(delete(self.model).filter_by(**filters))
             await session.commit()
 
-    async def read(self, **filters) -> Optional[ModelType] | None:
+    async def read(self, **filters) -> ModelType | None:
         async with self.db_session() as session:
             row = await session.execute(
                 select(self.model).filter_by(**filters),
