@@ -17,8 +17,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         try:
             admin_client = KafkaAdminClient(
                 bootstrap_servers=settings.kafka.host
-                                  + ":"
-                                  + settings.kafka.port,
+                + ":"
+                + settings.kafka.port,
                 api_version=(0, 9),
             )
 
