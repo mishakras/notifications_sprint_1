@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from contextlib import asynccontextmanager
+from typing import Awaitable, Callable
 
 from fastapi import FastAPI, Request, status
 from fastapi.responses import ORJSONResponse
@@ -11,6 +12,7 @@ from kafka.admin import NewTopic
 
 from notification_service.src.api.notif.v1 import notif
 from notification_service.src.core import settings
+from notification_service.src.core.config import Environment
 from notification_service.src.db.kafka import close_producer, get_producer
 
 logger = logging.getLogger(__name__)
@@ -19,12 +21,13 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Современный lifecycle FastAPI: startup/shutdown через lifespan."""
-    bootstrap = f"{settings.kafka.host}:{settings.kafka.port}"
+    bootstrap = settings.kafka.server
+    topic_name = settings.kafka.topic
     admin_client: KafkaAdminClient | None = None
 
     # --- STARTUP ---
-    # Ждём доступности брокера Kafka с экспоненциальным бэкофом
-    deadline = asyncio.get_event_loop().time() + 60  # сек
+    loop = asyncio.get_running_loop()
+    deadline = loop.time() + 60  # сек
     delay = 0.5
     while True:
         try:
@@ -33,9 +36,9 @@ async def lifespan(app: FastAPI):
                 api_version=(0, 9),
             )
             topics = admin_client.list_topics()
-            if "notifications" not in topics:
+            if topic_name not in topics:
                 topic = NewTopic(
-                    name="notifications",
+                    name=topic_name,
                     num_partitions=3,
                     replication_factor=2,
                 )
@@ -43,10 +46,10 @@ async def lifespan(app: FastAPI):
                     new_topics=[topic],
                     validate_only=False,
                 )
-                logger.info("Kafka topic created: notifications")
+                logger.info("Kafka topic created: %s", topic_name)
             break
         except Exception as e:  # брокер ещё не готов — подождём
-            if asyncio.get_event_loop().time() >= deadline:
+            if loop.time() >= deadline:
                 logger.exception("Kafka bootstrap failed: %s", e)
                 raise
             await asyncio.sleep(delay)
@@ -91,17 +94,19 @@ app = FastAPI(
 
 
 @app.middleware("http")
-async def before_request(request: Request, call_next):
+async def before_request(
+    request: Request,
+    call_next: Callable[[Request], Awaitable[ORJSONResponse]],
+):
     request_id = request.headers.get("X-Request-Id")
 
     if not request_id:
-        if settings.app.environment != "develop":
+        if settings.app.environment is not Environment.DEVELOP:
             return ORJSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 content={"detail": "X-Request-Id is required"},
             )
-        else:
-            request_id = str(settings.app.zero_request_id)
+        request_id = str(settings.app.zero_request_id)
 
     response = await call_next(request)
     response.headers["X-Request-Id"] = request_id
