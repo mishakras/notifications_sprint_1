@@ -1,4 +1,5 @@
 import os
+from enum import StrEnum
 from pathlib import Path
 from uuid import UUID
 
@@ -11,12 +12,19 @@ config = {
 }
 
 
+class Environment(StrEnum):
+    DEVELOPMENT = "development"
+    STAGING = "staging"
+    PRODUCTION = "production"
+    TEST = "test"
+
+
 class AppSettings(BaseModel):
     title: str = "Web sokets"
     description: str = "Сервис вебсокетов"
     version: str = "0.0.1"
     debug: bool = False
-    environment: str = config.get("ENVIRONMENT", "develop")
+    environment: str = config.get("ENVIRONMENT", Environment.DEVELOPMENT)
     zero_request_id: UUID = UUID("00000000-0000-0000-0000-000000000000")
 
 
@@ -46,6 +54,7 @@ class Settings(BaseSettings):
     app: AppSettings = AppSettings()
     local: LocalSettings = LocalSettings()
     logstash: LogstashSettings = LogstashSettings()
+    envEnum: Environment = Environment
 
 
 settings = Settings()

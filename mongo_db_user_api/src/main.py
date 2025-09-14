@@ -1,4 +1,6 @@
 import datetime
+from contextlib import asynccontextmanager
+from typing import AsyncGenerator
 
 from beanie import init_beanie
 from fastapi import FastAPI, Request, status
@@ -24,8 +26,40 @@ description = """
 MongoDB app
 """
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    redis.redis = Redis(
+        host=settings.redis.redis_host,
+        port=settings.redis.redis_port,
+    )
+    beanie.client = AsyncIOMotorClient(
+        "mongodb://"
+        + settings.db.username
+        + ":"
+        + settings.db.password
+        + "@"
+        + settings.db.host
+        + ":"
+        + settings.db.port,
+    )
+    await init_beanie(
+        database=beanie.client.db_name,
+        document_models=[
+            FilmMark,
+            FilmScore,
+            Like,
+            Review,
+        ],
+    )
+    yield
+    await redis.redis.close()
+    beanie.client.close()
+
+
 app = FastAPI(
     title=settings.app.title,
+    lifespan=lifespan,
     description=description,
     docs_url="/api/v1/openapi",
     openapi_url="/api/v1/openapi.json",
@@ -74,7 +108,7 @@ async def before_request(request: Request, call_next):
     request_id = request.headers.get("X-Request-Id")
 
     if not request_id:
-        if settings.app.environment != "develop":
+        if settings.app.environment != settings.envEnum.DEVELOPMENT:
             return ORJSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 content={"detail": "X-Request-Id is required"},
@@ -86,39 +120,6 @@ async def before_request(request: Request, call_next):
 
     response.headers["X-Request-Id"] = request_id
     return response
-
-
-@app.on_event("startup")
-async def startup():
-    redis.redis = Redis(
-        host=settings.redis.redis_host,
-        port=settings.redis.redis_port,
-    )
-    beanie.client = AsyncIOMotorClient(
-        "mongodb://"
-        + settings.db.username
-        + ":"
-        + settings.db.password
-        + "@"
-        + settings.db.host
-        + ":"
-        + settings.db.port,
-    )
-    await init_beanie(
-        database=beanie.client.db_name,
-        document_models=[
-            FilmMark,
-            FilmScore,
-            Like,
-            Review,
-        ],
-    )
-
-
-@app.on_event("shutdown")
-async def shutdown():
-    await redis.redis.close()
-    beanie.client.close()
 
 
 app.include_router(
