@@ -1,3 +1,4 @@
+python3-logstash==0.4.80
 aiohttp==3.11.11
 alembic==1.14.1
 asyncpg==0.30.0

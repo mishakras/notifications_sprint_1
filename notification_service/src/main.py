@@ -1,5 +1,9 @@
+from __future__ import annotations
+
+import asyncio
+import logging
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator
+from typing import Awaitable, Callable
 
 from fastapi import FastAPI, Request, status
 from fastapi.responses import ORJSONResponse
@@ -8,40 +12,64 @@ from kafka.admin import NewTopic
 
 from notification_service.src.api.notif.v1 import notif
 from notification_service.src.core import settings
+from notification_service.src.core.config import Environment
 from notification_service.src.db.kafka import close_producer, get_producer
+
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+async def lifespan(app: FastAPI):
+    """Современный lifecycle FastAPI: startup/shutdown через lifespan."""
+    bootstrap = settings.kafka.server
+    topic_name = settings.kafka.topic
+    admin_client: KafkaAdminClient | None = None
+
+    # --- STARTUP ---
+    loop = asyncio.get_running_loop()
+    deadline = loop.time() + 60  # сек
+    delay = 0.5
     while True:
         try:
             admin_client = KafkaAdminClient(
-                bootstrap_servers=settings.kafka.host
-                + ":"
-                + settings.kafka.port,
+                bootstrap_servers=bootstrap,
                 api_version=(0, 9),
             )
-
-            topic_list = []
-            topic_list_exists = admin_client.list_topics()
-            if "notifications" not in topic_list_exists:
-                topic_list.append(
-                    NewTopic(
-                        name="notifications",
-                        num_partitions=3,
-                        replication_factor=2,
-                    ),
+            topics = admin_client.list_topics()
+            if topic_name not in topics:
+                topic = NewTopic(
+                    name=topic_name,
+                    num_partitions=3,
+                    replication_factor=2,
                 )
                 admin_client.create_topics(
-                    new_topics=topic_list,
+                    new_topics=[topic],
                     validate_only=False,
                 )
+                logger.info("Kafka topic created: %s", topic_name)
             break
-        except Exception:
-            pass
+        except Exception as e:  # брокер ещё не готов — подождём
+            if loop.time() >= deadline:
+                logger.exception("Kafka bootstrap failed: %s", e)
+                raise
+            await asyncio.sleep(delay)
+            delay = min(delay * 2, 5.0)
+
+    # Инициализируем продюсера
     await get_producer()
-    yield
-    await close_producer()
+
+    try:
+        yield
+    finally:
+        # --- SHUTDOWN ---
+        try:
+            await close_producer()
+        finally:
+            if admin_client is not None:
+                try:
+                    admin_client.close()
+                except Exception:
+                    pass
 
 
 app = FastAPI(
@@ -61,24 +89,26 @@ app = FastAPI(
         "name": "Apache 2.0",
         "url": "https://www.apache.org/licenses/LICENSE-2.0.html",
     },
+    lifespan=lifespan,
 )
 
 
 @app.middleware("http")
-async def before_request(request: Request, call_next):
+async def before_request(
+    request: Request,
+    call_next: Callable[[Request], Awaitable[ORJSONResponse]],
+):
     request_id = request.headers.get("X-Request-Id")
 
     if not request_id:
-        if settings.app.environment != "develop":
+        if settings.app.environment is not Environment.DEVELOP:
             return ORJSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 content={"detail": "X-Request-Id is required"},
             )
-        else:
-            request_id = str(settings.app.zero_request_id)
+        request_id = str(settings.app.zero_request_id)
 
     response = await call_next(request)
-
     response.headers["X-Request-Id"] = request_id
     return response
 
