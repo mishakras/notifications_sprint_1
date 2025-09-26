@@ -1,10 +1,8 @@
 from __future__ import annotations
-
 import os
 
 from dotenv import load_dotenv
 from pydantic import BaseModel
-
 
 load_dotenv()
 
@@ -32,8 +30,8 @@ class Settings(BaseModel):
             return self.pg_dsn
         return (
             "postgresql://"
-            f"{self.db_user}:{self.db_pass}"
-            f"@{self.db_host}:{self.db_port}/{self.db_name}"
+            f"{self.db_user}: {self.db_pass}"
+            f"@{self.db_host}: {self.db_port}/{self.db_name}"
         )
 
 

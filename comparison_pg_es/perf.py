@@ -17,7 +17,6 @@ from es import ES
 from pg import PG
 from settings import SETTINGS
 
-
 LOG = logging.getLogger(__name__)
 
 
@@ -108,14 +107,29 @@ def _choose_inputs(
     return ids, genres, actors, directors
 
 
-async def run(
-    size_list: list[int],
-    iterations: int,
-    warmup: int,
-    limit: int,
-    samples_path: str | None,
-) -> None:
-    # Источники ID
+def _build_summary(
+    name: str,
+    values: list[float],
+    size: int,
+) -> dict:
+    return {
+        "case": name,
+        "size": size,
+        "count": len(values),
+        "avg_ms": round(1000 * stats.mean(values), 2) if values else None,
+        "median_ms": (
+            round(1000 * stats.median(values), 2) if values else None
+        ),
+        "p95_ms": round(1000 * p95(values), 2) if values else None,
+    }
+
+
+def _load_bases(samples_path: str | None) -> tuple[
+    list[str],
+    list[str],
+    list[str],
+    list[str],
+]:
     if samples_path:
         with open(samples_path, "r", encoding="utf-8") as f:
             samples = json.load(f)
@@ -123,118 +137,121 @@ async def run(
         base_genres = list(samples.get("genre_ids", []))
         base_actors = list(samples.get("actor_ids", []))
         base_directors = list(samples.get("director_ids", []))
-    else:
-        base_ids = [
-            f"00000000-0000-0000-0000-{i:012d}" for i in range(1, 5000)
-        ]
-        base_genres = [
-            f"00000000-0000-0000-0000-{i:012d}" for i in range(1, 200)
-        ]
-        base_actors = [
-            f"00000000-0000-0000-0000-{i:012d}" for i in range(1, 500)
-        ]
-        base_directors = [
-            f"00000000-0000-0000-0000-{i:012d}" for i in range(1, 500)
-        ]
+        return base_ids, base_genres, base_actors, base_directors
 
-    async with PG(SETTINGS.effective_pg_dsn()) as pg, ES(
-        SETTINGS.es_host,
-        SETTINGS.es_index,
-    ) as es:
-        # WARMUP
-        for _ in range(warmup):
+    base_ids = [f"00000000-0000-0000-0000-{i: 012d}" for i in range(1, 5000)]
+    base_genres = [f"00000000-0000-0000-0000-{i: 012d}" for i in range(1, 200)]
+    base_actors = [f"00000000-0000-0000-0000-{i: 012d}" for i in range(1, 500)]
+    base_directors = [f"00000000-0000-0000-0000-{i: 012d}"
+                      for i in range(1, 500)]
+    return base_ids, base_genres, base_actors, base_directors
+
+
+async def _warmup(
+    pg: PG,
+    es: ES,
+    bases: tuple[list[str], list[str], list[str], list[str]],
+    warmup: int,
+    limit: int,
+) -> None:
+    base_ids, base_genres, base_actors, base_directors = bases
+    for _ in range(warmup):
+        inputs = _choose_inputs(
+            base_ids,
+            base_genres,
+            base_actors,
+            base_directors,
+            size=5,
+        )
+        try:
+            await bench_once_pg(pg, *inputs, limit)
+        except Exception:
+            pass
+        try:
+            await bench_once_es(es, *inputs, limit)
+        except Exception:
+            pass
+
+
+async def _measure(
+    pg: PG,
+    es: ES,
+    bases: tuple[list[str], list[str], list[str], list[str]],
+    size_list: list[int],
+    iterations: int,
+    limit: int,
+) -> list[dict]:
+    base_ids, base_genres, base_actors, base_directors = bases
+    rows: list[dict] = []
+    for size in size_list:
+        pg_fetch: list[float] = []
+        pg_rg: list[float] = []
+        pg_rp: list[float] = []
+
+        es_fetch: list[float] = []
+        es_rg: list[float] = []
+        es_rp: list[float] = []
+
+        for _ in range(iterations):
             inputs = _choose_inputs(
                 base_ids,
                 base_genres,
                 base_actors,
                 base_directors,
-                size=5,
+                size=size,
             )
             try:
-                await bench_once_pg(pg, *inputs, limit)
+                t_fetch, t_rg, t_rp = await bench_once_pg(pg, *inputs, limit)
+                pg_fetch.append(t_fetch)
+                pg_rg.append(t_rg)
+                pg_rp.append(t_rp)
             except Exception:
                 pass
             try:
-                await bench_once_es(es, *inputs, limit)
+                t_fetch, t_rg, t_rp = await bench_once_es(es, *inputs, limit)
+                es_fetch.append(t_fetch)
+                es_rg.append(t_rg)
+                es_rp.append(t_rp)
             except Exception:
                 pass
 
-        rows: list[dict] = []
-        for local_size in size_list:
-            pg_fetch: list[float] = []
-            pg_rg: list[float] = []
-            pg_rp: list[float] = []
+        rows.extend(
+            [
+                _build_summary("PG fetch_by_ids", pg_fetch, size),
+                _build_summary("PG rank_by_genres", pg_rg, size),
+                _build_summary("PG rank_by_persons", pg_rp, size),
+                _build_summary("ES fetch_by_ids", es_fetch, size),
+                _build_summary("ES rank_by_genres", es_rg, size),
+                _build_summary("ES rank_by_persons", es_rp, size),
+            ],
+        )
+    return rows
 
-            es_fetch: list[float] = []
-            es_rg: list[float] = []
-            es_rp: list[float] = []
 
-            for _ in range(iterations):
-                inputs = _choose_inputs(
-                    base_ids,
-                    base_genres,
-                    base_actors,
-                    base_directors,
-                    size=local_size,
-                )
-
-                try:
-                    t_fetch, t_rg, t_rp = await bench_once_pg(
-                        pg,
-                        *inputs,
-                        limit,
-                    )
-                    pg_fetch.append(t_fetch)
-                    pg_rg.append(t_rg)
-                    pg_rp.append(t_rp)
-                except Exception:
-                    pass
-
-                try:
-                    t_fetch, t_rg, t_rp = await bench_once_es(
-                        es,
-                        *inputs,
-                        limit,
-                    )
-                    es_fetch.append(t_fetch)
-                    es_rg.append(t_rg)
-                    es_rp.append(t_rp)
-                except Exception:
-                    pass
-
-            def summary(name: str, values: list[float]) -> dict:
-                return {
-                    "case": name,
-                    "size": local_size,
-                    "count": len(values),
-                    "avg_ms": (
-                        round(1000 * stats.mean(values), 2) if values else None
-                    ),
-                    "median_ms": (
-                        round(1000 * stats.median(values), 2)
-                        if values
-                        else None
-                    ),
-                    "p95_ms": (
-                        round(1000 * p95(values), 2) if values else None
-                    ),
-                }
-
-            rows.extend(
-                [
-                    summary("PG fetch_by_ids", pg_fetch),
-                    summary("PG rank_by_genres", pg_rg),
-                    summary("PG rank_by_persons", pg_rp),
-                    summary("ES fetch_by_ids", es_fetch),
-                    summary("ES rank_by_genres", es_rg),
-                    summary("ES rank_by_persons", es_rp),
-                ],
-            )
+async def run(
+    size_list: list[int],
+    iterations: int,
+    warmup: int,
+    limit: int,
+    samples_path: str | None,
+) -> None:
+    bases = _load_bases(samples_path)
+    async with PG(SETTINGS.effective_pg_dsn()) as pg, ES(
+        SETTINGS.es_host,
+        SETTINGS.es_index,
+    ) as es:
+        await _warmup(pg, es, bases, warmup, limit)
+        rows = await _measure(pg, es, bases, size_list, iterations, limit)
 
     df = pd.DataFrame(rows)
     df.to_csv("benchmark_results.csv", index=False)
 
-    table_text = tabulate(df, headers="keys", tablefmt="github", showindex=False)
+    table_text = tabulate(
+        df,
+        headers="keys",
+        tablefmt="github",
+        showindex=False,
+    )
     LOG.info("\n%s", table_text)
     LOG.info("Saved: benchmark_results.csv")
 
@@ -260,10 +277,7 @@ def parse_args() -> argparse.Namespace:
 
 
 if __name__ == "__main__":
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(message)s",
-    )
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
     ARGS = parse_args()
     SIZES = [int(x.strip()) for x in ARGS.sizes.split(",") if x.strip()]
     asyncio.run(

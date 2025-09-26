@@ -1,5 +1,4 @@
 from __future__ import annotations
-
 from typing import Sequence
 
 import asyncpg
@@ -28,15 +27,12 @@ class PG:
         """Вернуть фильмы по списку id в исходном порядке."""
         if not ids:
             return []
-
         sql = """
-            SELECT
-                fw.*
+            SELECT fw.*
             FROM content.film_work AS fw
             WHERE fw.id = ANY($1::uuid[])
             ORDER BY array_position($1::uuid[], fw.id);
         """
-
         assert self._pool is not None
         async with self._pool.acquire() as conn:
             rows = await conn.fetch(sql, list(ids))
@@ -51,7 +47,6 @@ class PG:
         """Ранжирование фильмов по числу совпавших жанров."""
         if not genre_ids:
             return []
-
         sql = """
             WITH input_genres AS (
                 SELECT UNNEST($1::uuid[]) AS genre_id
@@ -77,7 +72,6 @@ class PG:
                 fw.id
             LIMIT $2 OFFSET $3;
         """
-
         assert self._pool is not None
         async with self._pool.acquire() as conn:
             rows = await conn.fetch(sql, list(genre_ids), limit, offset)
@@ -96,7 +90,6 @@ class PG:
         director_ids = list(director_ids or [])
         if not actor_ids and not director_ids:
             return []
-
         sql = """
             WITH
             input_actors AS (
@@ -148,7 +141,6 @@ class PG:
                 fw.id
             LIMIT $4 OFFSET $5;
         """
-
         assert self._pool is not None
         async with self._pool.acquire() as conn:
             rows = await conn.fetch(
