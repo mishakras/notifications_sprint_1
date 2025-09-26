@@ -12,10 +12,10 @@ from typing import Sequence
 import numpy as np
 import pandas as pd
 from tabulate import tabulate
-
 from es import ES
 from pg import PG
 from settings import SETTINGS
+
 
 LOG = logging.getLogger(__name__)
 
