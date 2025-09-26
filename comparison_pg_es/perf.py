@@ -16,7 +16,6 @@ from es import ES
 from pg import PG
 from settings import SETTINGS
 
-
 LOG = logging.getLogger(__name__)
 
 
