@@ -1,0 +1,19 @@
+case,size,count,avg_ms,median_ms,p95_ms
+PG fetch_by_ids,5,10,3.74,3.92,4.19
+PG rank_by_genres,5,10,4.34,4.51,4.89
+PG rank_by_persons,5,10,6.42,6.7,7.49
+ES fetch_by_ids,5,10,5.84,6.05,6.45
+ES rank_by_genres,5,10,8.95,9.04,9.39
+ES rank_by_persons,5,10,9.51,9.31,10.7
+PG fetch_by_ids,20,10,3.61,3.7,4.48
+PG rank_by_genres,20,10,4.05,4.4,4.68
+PG rank_by_persons,20,10,5.23,5.7,7.28
+ES fetch_by_ids,20,10,5.04,4.56,6.44
+ES rank_by_genres,20,10,7.52,7.45,9.23
+ES rank_by_persons,20,10,8.34,8.6,9.42
+PG fetch_by_ids,100,10,4.22,4.28,4.64
+PG rank_by_genres,100,10,4.43,4.29,5.39
+PG rank_by_persons,100,10,6.49,6.64,7.5
+ES fetch_by_ids,100,10,9.48,7.97,17.07
+ES rank_by_genres,100,10,9.5,9.52,11.38
+ES rank_by_persons,100,10,9.68,9.85,11.48
