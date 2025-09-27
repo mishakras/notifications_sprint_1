@@ -123,12 +123,9 @@ def _build_summary(
     }
 
 
-def _load_bases(samples_path: str | None) -> tuple[
-    list[str],
-    list[str],
-    list[str],
-    list[str],
-]:
+def _load_bases(
+    samples_path: str | None,
+) -> tuple[list[str], list[str], list[str], list[str]]:
     if samples_path:
         with open(samples_path, "r", encoding="utf-8") as f:
             samples = json.load(f)
@@ -138,11 +135,22 @@ def _load_bases(samples_path: str | None) -> tuple[
         base_directors = list(samples.get("director_ids", []))
         return base_ids, base_genres, base_actors, base_directors
 
-    base_ids = [f"00000000-0000-0000-0000-{i: 012d}" for i in range(1, 5000)]
-    base_genres = [f"00000000-0000-0000-0000-{i: 012d}" for i in range(1, 200)]
-    base_actors = [f"00000000-0000-0000-0000-{i: 012d}" for i in range(1, 500)]
-    base_directors = [f"00000000-0000-0000-0000-{i: 012d}"
-                      for i in range(1, 500)]
+    # избегаем f-строк с форматом {i:012d}, чтобы не ловить E231
+    def _tail(n: int) -> str:
+        return format(n, "012d")  # эквивалент f"{n:012d}"
+
+    base_ids = [
+        f"00000000-0000-0000-0000-{_tail(i)}" for i in range(1, 5000)
+    ]
+    base_genres = [
+        f"00000000-0000-0000-0000-{_tail(i)}" for i in range(1, 200)
+    ]
+    base_actors = [
+        f"00000000-0000-0000-0000-{_tail(i)}" for i in range(1, 500)
+    ]
+    base_directors = [
+        f"00000000-0000-0000-0000-{_tail(i)}" for i in range(1, 500)
+    ]
     return base_ids, base_genres, base_actors, base_directors
 
 
@@ -222,7 +230,7 @@ async def _measure(
                 _build_summary("ES fetch_by_ids", es_fetch, size),
                 _build_summary("ES rank_by_genres", es_rg, size),
                 _build_summary("ES rank_by_persons", es_rp, size),
-            ],
+            ]
         )
     return rows
 
@@ -236,8 +244,7 @@ async def run(
 ) -> None:
     bases = _load_bases(samples_path)
     async with PG(SETTINGS.effective_pg_dsn()) as pg, ES(
-        SETTINGS.es_host,
-        SETTINGS.es_index,
+        SETTINGS.es_host, SETTINGS.es_index
     ) as es:
         await _warmup(pg, es, bases, warmup, limit)
         rows = await _measure(pg, es, bases, size_list, iterations, limit)
@@ -286,5 +293,5 @@ if __name__ == "__main__":
             ARGS.warmup,
             ARGS.limit,
             ARGS.use_samples,
-        ),
+        )
     )
