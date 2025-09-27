@@ -106,11 +106,7 @@ def _choose_inputs(
     return ids, genres, actors, directors
 
 
-def _build_summary(
-    name: str,
-    values: list[float],
-    size: int,
-) -> dict:
+def _build_summary(name: str, values: list[float], size: int) -> dict:
     return {
         "case": name,
         "size": size,
@@ -136,12 +132,10 @@ def _load_bases(
         return base_ids, base_genres, base_actors, base_directors
 
     # избегаем f-строк с форматом {i:012d}, чтобы не ловить E231
-    def _tail(n: int) -> str:
-        return format(n, "012d")  # эквивалент f"{n:012d}"
+    def _tail(number: int) -> str:
+        return format(number, "012d")  # эквивалент f"{number:012d}"
 
-    base_ids = [
-        f"00000000-0000-0000-0000-{_tail(i)}" for i in range(1, 5000)
-    ]
+    base_ids = [f"00000000-0000-0000-0000-{_tail(i)}" for i in range(1, 5000)]
     base_genres = [
         f"00000000-0000-0000-0000-{_tail(i)}" for i in range(1, 200)
     ]
@@ -230,7 +224,7 @@ async def _measure(
                 _build_summary("ES fetch_by_ids", es_fetch, size),
                 _build_summary("ES rank_by_genres", es_rg, size),
                 _build_summary("ES rank_by_persons", es_rp, size),
-            ]
+            ],
         )
     return rows
 
@@ -244,7 +238,8 @@ async def run(
 ) -> None:
     bases = _load_bases(samples_path)
     async with PG(SETTINGS.effective_pg_dsn()) as pg, ES(
-        SETTINGS.es_host, SETTINGS.es_index
+        SETTINGS.es_host,
+        SETTINGS.es_index,
     ) as es:
         await _warmup(pg, es, bases, warmup, limit)
         rows = await _measure(pg, es, bases, size_list, iterations, limit)
@@ -293,5 +288,5 @@ if __name__ == "__main__":
             ARGS.warmup,
             ARGS.limit,
             ARGS.use_samples,
-        )
+        ),
     )
