@@ -13,11 +13,11 @@ python perf.py --sizes 5,20,100 --iterations 10 --warmup 2 --limit 100
 
 | case               |   size |   count |   avg_ms |   median_ms |   p95_ms |
 |--------------------|--------|---------|----------|-------------|----------|
-| PG rank_by_profile |      5 |      10 |     9.9  |       10.24 |    11.21 |
-| ES rank_by_profile |      5 |      10 |    10.38 |       10.58 |    11.74 |
-| PG rank_by_profile |     20 |      10 |     7.44 |        6.72 |    10.64 |
-| ES rank_by_profile |     20 |      10 |     8.52 |        8.17 |    11.96 |
-| PG rank_by_profile |    100 |      10 |     8.15 |        7.86 |    11.07 |
-| ES rank_by_profile |    100 |      10 |    12.96 |        9.74 |    29.23 |
+| PG rank_by_profile |      5 |      10 |    10.57 |       10.24 |    11.68 |
+| ES rank_by_profile |      5 |      10 |     9.34 |        9.39 |     9.76 |
+| PG rank_by_profile |     20 |      10 |     8.97 |       10.17 |    10.67 |
+| ES rank_by_profile |     20 |      10 |     8.48 |        8.85 |    10.87 |
+| PG rank_by_profile |    100 |      10 |    11.04 |       11.64 |    12.97 |
+| ES rank_by_profile |    100 |      10 |    12.22 |       12.31 |    13.38 |
 
 
