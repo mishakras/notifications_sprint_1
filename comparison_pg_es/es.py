@@ -1,17 +1,24 @@
 from __future__ import annotations
 
-from typing import Dict, Iterable, List, Optional, Sequence
+from typing import Dict, List, Optional, Sequence, Tuple
 
 from elasticsearch import AsyncElasticsearch
 
 
-def _as_list(values: Iterable[str]) -> List[str]:
-    return list({str(v) for v in values if v})
-
-
 class ES:
-    def __init__(self, host: str, index: str) -> None:
-        self._es = AsyncElasticsearch(hosts=[host], request_timeout=30)
+    def __init__(
+        self,
+        host: str,
+        index: str,
+        user: Optional[str] = None,
+        password: Optional[str] = None,
+    ) -> None:
+        basic_auth = (user, password) if user and password else None
+        self._es = AsyncElasticsearch(
+            hosts=[host],
+            basic_auth=basic_auth,
+            request_timeout=30,
+        )
         self._index = index
 
     async def __aenter__(self) -> "ES":
@@ -20,18 +27,21 @@ class ES:
     async def __aexit__(self, exc_type, exc, tb) -> None:
         await self._es.close()
 
-    async def fetch_by_ids(self, ids: Sequence[str]) -> list[dict]:
-        ids_list = _as_list(ids)
-        if not ids_list:
-            return []
-        resp = await self._es.mget(index=self._index, body={"ids": ids_list})
-        docs = []
-        for d in resp.get("docs", []):
-            if d.get("found"):
-                src = d.get("_source", {}) or {}
-                src["_id"] = d.get("_id")
-                docs.append(src)
-        return docs
+    async def close(self) -> None:
+        await self._es.close()
+
+    # ------------ helpers ------------
+
+    @staticmethod
+    def _topk_items(weights: Dict[str, float], k: int) -> List[Tuple[str, float]]:
+        """Берём по модулю веса — самые «влияющие»."""
+        return sorted(
+            weights.items(),
+            key=lambda kv: abs(kv[1]),
+            reverse=True,
+        )[:k]
+
+    # ------------ основной метод сравнения ------------
 
     async def rank_by_profile(
         self,
@@ -39,77 +49,91 @@ class ES:
         actor_weights: Dict[str, float],
         director_weights: Dict[str, float],
         *,
-        exclude_ids: Optional[Sequence[str]] = None,
+        exclude_ids: Sequence[str] | None = None,
         limit: int = 100,
         director_weight: float = 2.0,
         rating_weight: float = 0.0,
+        top_k: int = 256,
     ) -> list[dict]:
-        should: List[dict] = []
-        if genre_weights:
-            should.append(
-                {"nested": {
-                    "path": "genres",
-                    "query": {"terms": {"genres.id": list(genre_weights.keys())}},
-                }}
-            )
-        if actor_weights:
-            should.append(
-                {"nested": {
-                    "path": "actors",
-                    "query": {"terms": {"actors.id": list(actor_weights.keys())}},
-                }}
-            )
-        if director_weights:
-            should.append(
-                {"nested": {
-                    "path": "directors",
-                    "query": {"terms": {"directors.id": list(director_weights.keys())}},
-                }}
-            )
-
-        base_query = {
-            "bool": {
-                "must_not": [{"ids": {"values": list(exclude_ids)}}] if exclude_ids else [],
-                "should": should,
-                "minimum_should_match": 1 if should else 0,
-            }
-        }
-
-        script = """
-            double s = 0.0;
-            if (!params.gw.isEmpty() && doc.containsKey('genres.id') && !doc['genres.id'].isEmpty()) {
-              for (def v : doc['genres.id']) { if (params.gw.containsKey(v)) s += (double)params.gw.get(v); }
-            }
-            if (!params.aw.isEmpty() && doc.containsKey('actors.id') && !doc['actors.id'].isEmpty()) {
-              for (def v : doc['actors.id']) { if (params.aw.containsKey(v)) s += (double)params.aw.get(v); }
-            }
-            if (!params.dw.isEmpty() && doc.containsKey('directors.id') && !doc['directors.id'].isEmpty()) {
-              for (def v : doc['directors.id']) { if (params.dw.containsKey(v)) s += params.dcoef * (double)params.dw.get(v); }
-            }
-            if (params.rcoef != 0.0 && doc.containsKey('rating') && !doc['rating'].isEmpty()) {
-              s += params.rcoef * (double)doc['rating'].value;
-            }
-            return s;
         """
+        [Design note] Сравнение с PG без скриптов:
+        - используем function_score + term/terms по ПЛОСКИМ полям *_ids (см. fill_es_from_pg.py), без painless;
+        - rating добавляем через field_value_factor;
+        - итоговая формула 1-в-1 с PG:
+          sum(genres) + sum(actors) + director_weight * sum(directors) + rating_weight * rating;
+        - ограничиваем число функций через top_k, чтобы не раздувать запрос;
+        - отказ от nested выбран намеренно: для этого кейса плоская схема дешевле по исполнению.
+        Примечание: на маленьком датасете ES может быть медленнее из-за оверхеда координации;
+        на больших объёмах выигрывает за счёт инвертированных индексов и кэшей.
+        """
+        exclude_ids = list(exclude_ids or [])
 
-        query = {
-            "script_score": {
+        # умножаем веса режиссёров на коэффициент
+        dir_w = {
+            k: float(v) * float(director_weight)
+            for k, v in (director_weights or {}).items()
+        }
+
+        # ограничиваем количество функций, чтобы не раздувать запрос
+        g_top = self._topk_items(genre_weights or {}, top_k)
+        a_top = self._topk_items(actor_weights or {}, top_k)
+        d_top = self._topk_items(dir_w or {}, top_k)
+
+        functions: List[dict] = []
+        should: List[dict] = []
+
+        # функции-веса на совпадения ID (плоские поля, без nested)
+        for pid, w in g_top:
+            functions.append({"filter": {"term": {"genre_ids": pid}}, "weight": float(w)})
+        for pid, w in a_top:
+            functions.append({"filter": {"term": {"actor_ids": pid}}, "weight": float(w)})
+        for pid, w in d_top:
+            functions.append({"filter": {"term": {"director_ids": pid}}, "weight": float(w)})
+
+        # вклад рейтинга через field_value_factor
+        if rating_weight and float(rating_weight) != 0.0:
+            functions.append(
+                {
+                    "field_value_factor": {
+                        "field": "rating",
+                        "factor": float(rating_weight),
+                        "missing": 0.0,
+                    }
+                }
+            )
+
+        # базовый запрос — нужен хотя бы один матч по профилю
+        if g_top:
+            should.append({"terms": {"genre_ids": [pid for pid, _ in g_top]}})
+        if a_top:
+            should.append({"terms": {"actor_ids": [pid for pid, _ in a_top]}})
+        if d_top:
+            should.append({"terms": {"director_ids": [pid for pid, _ in d_top]}})
+
+        if should:
+            base_query: dict = {"bool": {"should": should, "minimum_should_match": 1}}
+        else:
+            # если профиль пуст — матчим всё (останется только рейтинг)
+            base_query = {"match_all": {}}
+
+        if exclude_ids:
+            base_query = {
+                "bool": {
+                    "must": [base_query],
+                    "must_not": [{"ids": {"values": exclude_ids}}],
+                }
+            }
+
+        q = {
+            "function_score": {
                 "query": base_query,
-                "script": {
-                    "lang": "painless",
-                    "source": script,
-                    "params": {
-                        "gw": genre_weights,
-                        "aw": actor_weights,
-                        "dw": director_weights,
-                        "dcoef": director_weight,
-                        "rcoef": rating_weight,
-                    },
-                },
+                "functions": functions,
+                "score_mode": "sum",
+                "boost_mode": "sum",
             }
         }
 
-        resp = await self._es.search(index=self._index, size=limit, query=query)
+        resp = await self._es.search(index=self._index, size=limit, query=q)
         hits = resp.get("hits", {}).get("hits", [])
         return [
             dict(h["_source"], **{"_id": h["_id"], "_score": h.get("_score")})

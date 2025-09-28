@@ -2,134 +2,100 @@
 from __future__ import annotations
 
 import asyncio
-import json
 import os
 from typing import Any, AsyncIterator
 
 import asyncpg
 from elasticsearch import AsyncElasticsearch
 
+# Этот скрипт намеренно маленький: он НЕ считает и не фильтрует,
+# он просто "переливает" фильмы из PG в ES в плоской схеме,
+# которая лучше подходит для быстрых terms/filters в ES
+# (без nested и без script_score).
 
-PG_DSN = os.getenv("PG_DSN", "postgresql://postgres:secret@localhost:5432/theatre")
+PG_DSN = os.getenv(
+    "PG_DSN",
+    "postgresql://postgres:secret@localhost:5432/theatre",
+)
 ES_HOST = os.getenv("ES_HOST", "http://localhost:9200")
 ES_INDEX = os.getenv("ES_INDEX", "movies")
 BATCH = int(os.getenv("BATCH", "1000"))
-
 
 CREATE_INDEX_BODY = {
     "mappings": {
         "properties": {
             "rating": {"type": "float"},
-            "genres": {
-                "type": "nested",
-                "properties": {"id": {"type": "keyword"}},
-            },
-            "actors": {
-                "type": "nested",
-                "properties": {"id": {"type": "keyword"}},
-            },
-            "directors": {
-                "type": "nested",
-                "properties": {"id": {"type": "keyword"}},
-            },
+            "genre_ids": {"type": "keyword"},
+            "actor_ids": {"type": "keyword"},
+            "director_ids": {"type": "keyword"},
         }
     }
 }
 
-# Собираем документ фильма: rating + массивы id для жанров/актёров/режиссёров
+# Берём rating и массива ID (без nested/объектов).
 FILMS_SQL = """
 SELECT
   fw.id::text AS id,
   COALESCE(fw.rating, 0.0) AS rating,
 
   COALESCE((
-    SELECT jsonb_agg(DISTINCT jsonb_build_object('id', g.id::text))
+    SELECT array_agg(DISTINCT g.id::text)
     FROM content.genre_film_work gfw
     JOIN content.genre g ON g.id = gfw.genre_id
     WHERE gfw.film_work_id = fw.id
-  ), '[]'::jsonb) AS genres,
+  ), ARRAY[]::text[]) AS genre_ids,
 
   COALESCE((
-    SELECT jsonb_agg(DISTINCT jsonb_build_object('id', pfw.person_id::text))
+    SELECT array_agg(DISTINCT pfw.person_id::text)
     FROM content.person_film_work pfw
     WHERE pfw.film_work_id = fw.id AND pfw.role = 'actor'
-  ), '[]'::jsonb) AS actors,
+  ), ARRAY[]::text[]) AS actor_ids,
 
   COALESCE((
-    SELECT jsonb_agg(DISTINCT jsonb_build_object('id', pfw.person_id::text))
+    SELECT array_agg(DISTINCT pfw.person_id::text)
     FROM content.person_film_work pfw
     WHERE pfw.film_work_id = fw.id AND pfw.role = 'director'
-  ), '[]'::jsonb) AS directors
+  ), ARRAY[]::text[]) AS director_ids
 
 FROM content.film_work fw
 ORDER BY fw.id
 """
 
-
 async def iter_films(conn: asyncpg.Connection) -> AsyncIterator[asyncpg.Record]:
-    # Стримим курсором сразу SQL-строку
     async with conn.transaction():
         async for row in conn.cursor(FILMS_SQL, prefetch=BATCH):
             yield row
 
-
-def _to_id_list(value: Any) -> list[str]:
-    """Нормализует json/jsonb (строкой), list[dict], list[str] → list[str] id."""
-    if value is None:
-        return []
-    # json/jsonb могли прийти как строка
-    if isinstance(value, str):
-        try:
-            value = json.loads(value)
-        except Exception:
-            return []
-    result: list[str] = []
-    if isinstance(value, list):
-        for item in value:
-            if isinstance(item, dict):
-                v = item.get("id")
-                if v:
-                    result.append(str(v))
-            elif isinstance(item, str):
-                result.append(item)
-    return result
-
-
 def make_doc(row: asyncpg.Record) -> tuple[str, dict[str, Any]]:
     film_id: str = row["id"]
     rating = float(row["rating"] or 0.0)
-
-    genre_ids = _to_id_list(row["genres"])
-    actor_ids = _to_id_list(row["actors"])
-    director_ids = _to_id_list(row["directors"])
-
-    # Приводим к ожидаемой схеме
+    # asyncpg для text[] вернёт list[str]
+    genre_ids = list(row["genre_ids"] or [])
+    actor_ids = list(row["actor_ids"] or [])
+    director_ids = list(row["director_ids"] or [])
     doc = {
         "rating": rating,
-        "genres": [{"id": gid} for gid in genre_ids],
-        "actors": [{"id": pid} for pid in actor_ids],
-        "directors": [{"id": did} for did in director_ids],
+        "genre_ids": genre_ids,
+        "actor_ids": actor_ids,
+        "director_ids": director_ids,
     }
     return film_id, doc
-
 
 async def ensure_index(es: AsyncElasticsearch) -> None:
     exists = await es.indices.exists(index=ES_INDEX)
     if not exists:
         await es.indices.create(index=ES_INDEX, **CREATE_INDEX_BODY)
 
-
 async def bulk_index(es: AsyncElasticsearch, ops: list[dict]) -> None:
     if not ops:
         return
-    # AsyncElasticsearch.bulk ожидает "operations" списком action/doc
     resp = await es.bulk(operations=ops, index=ES_INDEX, refresh=False)
     if resp.get("errors"):
-        # Для простоты печатаем первую ошибку
         items = resp.get("items", [])
-        bad = next((it for it in items if list(it.values())[0].get("error")), None)
+        bad = next(
+            (it for it in items if list(it.values())[0].get("error")), None
+        )
         raise RuntimeError(f"Bulk had errors: {bad}")
-
 
 async def main() -> None:
     print(f"PG_DSN={PG_DSN}")
@@ -157,7 +123,6 @@ async def main() -> None:
                         ops.clear()
 
             if ops:
-                # добиваем хвост
                 await bulk_index(es, ops)
                 total += len(ops) // 2
                 ops.clear()
@@ -168,7 +133,6 @@ async def main() -> None:
             await pool.close()
     finally:
         await es.close()
-
 
 if __name__ == "__main__":
     asyncio.run(main())
