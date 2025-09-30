@@ -1,6 +1,6 @@
 from beanie import Document
 
-from .base import MixinFilmID, MixinID, MixinUserID, CreateMixin
+from .base import CreateMixin, MixinFilmID, MixinID, MixinUserID
 
 
 class VideoCompletion(MixinUserID, MixinFilmID):

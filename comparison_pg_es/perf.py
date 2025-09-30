@@ -9,7 +9,6 @@ from typing import Dict, List, Sequence
 
 import numpy as np
 import pandas as pd
-from tabulate import tabulate
 from es import ES
 from pg import PG
 from settings import SETTINGS
@@ -20,12 +19,12 @@ def p95(values: List[float]) -> float:
 
 
 def _mk_weights(ids: Sequence[str]) -> Dict[str, float]:
-    # имитируем историю: случайный watched_percentage in [0.5, 1.0]
-    # w = (p * 3.5 - 1.5)
+    # имитируем историю: случайный
+    # watched_percentage in [0.5, 1.0] w = (p * 3.5 - 1.5)
     out: Dict[str, float] = {}
     for i in ids:
-        p = random.uniform(0.5, 1.0)
-        out[str(i)] = (p * 3.5) - 1.5
+        percent = random.uniform(0.5, 1.0)
+        out[str(i)] = (percent * 3.5) - 1.5
     return out
 
 
@@ -110,15 +109,13 @@ async def run(
 
             rows.extend(
                 [
-                    row("PG rank_by_profile", s, pg_times),
-                    row("ES rank_by_profile", s, es_times),
-                ]
+                    row("PG rank_by_profile", size, pg_times),
+                    row("ES rank_by_profile", size, es_times),
+                ],
             )
 
     df = pd.DataFrame(rows)
-    print(tabulate(df, headers="keys", tablefmt="github", showindex=False))
     df.to_csv("benchmark_results.csv", index=False)
-    print("\nSaved: benchmark_results.csv")
 
 
 def parse_args() -> argparse.Namespace:

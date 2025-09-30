@@ -74,56 +74,21 @@ class ES:
         на больших объёмах выигрывает за счёт инвертированных индексов и кэшей.
         """
         exclude_ids = list(exclude_ids or [])
-
         # умножаем веса режиссёров на коэффициент
         dir_w = {
             key: float(val) * float(director_weight)
             for key, val in (director_weights or {}).items()
         }
-
         # ограничиваем количество функций, чтобы не раздувать запрос
         g_top = self._topk_items(genre_weights or {}, top_k)
         a_top = self._topk_items(actor_weights or {}, top_k)
         d_top = self._topk_items(dir_w or {}, top_k)
-
         functions: List[dict] = []
         should: List[dict] = []
-
         # функции-веса на совпадения ID (плоские поля, без nested)
-        for pid, weight in g_top:
-            functions.append(
-                {
-                    "filter": {
-                        "term": {
-                            "genre_ids": pid,
-                        }
-                    },
-                    "weight": float(weight),
-                },
-            )
-        for pid, weight in a_top:
-            functions.append(
-                {
-                    "filter": {
-                            "term": {
-                                "actor_ids": pid,
-                            }
-                        },
-                    "weight": float(weight),
-                },
-            )
-        for pid, weight in d_top:
-            functions.append(
-                {
-                    "filter": {
-                        "term": {
-                            "director_ids": pid,
-                        }
-                    },
-                    "weight": float(weight),
-                },
-            )
-
+        self.append_to_func(g_top, functions)
+        self.append_to_func(a_top, functions)
+        self.append_to_func(d_top, functions)
         # вклад рейтинга через field_value_factor
         if rating_weight and float(rating_weight) != 0.0:
             functions.append(
@@ -135,7 +100,6 @@ class ES:
                     },
                 },
             )
-
         # базовый запрос — нужен хотя бы один матч по профилю
         if g_top:
             should.append({"terms": {"genre_ids": [pid for pid, _ in g_top]}})
@@ -149,7 +113,6 @@ class ES:
                     },
                 },
             )
-
         if should:
             base_query: dict = {
                 "bool": {
@@ -160,7 +123,6 @@ class ES:
         else:
             # если профиль пуст — матчим всё (останется только рейтинг)
             base_query = {"match_all": {}}
-
         if exclude_ids:
             base_query = {
                 "bool": {
@@ -168,8 +130,7 @@ class ES:
                     "must_not": [{"ids": {"values": exclude_ids}}],
                 },
             }
-
-        q = {
+        end_query = {
             "function_score": {
                 "query": base_query,
                 "functions": functions,
@@ -177,10 +138,27 @@ class ES:
                 "boost_mode": "sum",
             },
         }
-
-        resp = await self._es.search(index=self._index, size=limit, query=q)
+        resp = await self._es.search(
+            index=self._index,
+            size=limit,
+            query=end_query,
+        )
         hits = resp.get("hits", {}).get("hits", [])
         return [
             dict(h["_source"], **{"_id": h["_id"], "_score": h.get("_score")})
             for h in hits
         ]
+
+    def append_to_func(self, to_append: list, functions: list):
+        for pid, weight in to_append:
+            functions.append(
+                {
+                    "filter": {
+                        "term": {
+                            "actor_ids": pid,
+                        },
+                    },
+                    "weight": float(weight),
+                },
+            )
+        return functions

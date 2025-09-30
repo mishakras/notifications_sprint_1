@@ -102,7 +102,8 @@ async def bulk_index(es: AsyncElasticsearch, ops: list[dict]) -> None:
             [],
         )
         bad = next(
-            (it for it in items if list(it.values())[0].get("error")), None
+            (it for it in items if list(it.values())[0].get("error")),
+            None,
         )
         raise RuntimeError(f"Bulk had errors: {bad}")
 

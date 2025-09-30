@@ -41,7 +41,7 @@ class RecommendationService:
                     )
             return await self.films_service.search_similar(
                 search_values,
-                [film_id for film_id in films_ids_to_percentage.keys()],
+                list(films_ids_to_percentage.keys()),
             )
 
     async def get_history(self, user_id):
@@ -53,7 +53,7 @@ class RecommendationService:
             "watched_percentage": {
                 "comparison": ">=",
                 "value": 0.5,
-            }
+            },
         })
         return films_history
 

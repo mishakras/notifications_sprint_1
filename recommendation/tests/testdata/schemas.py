@@ -43,7 +43,7 @@ class IndexSchema(Enum):
                             'russian_stop',
                             'russian_stemmer',
                         ],
-                    }
+                    },
                 },
             },
         },
@@ -126,7 +126,7 @@ class IndexSchema(Enum):
                             'russian_stop',
                             'russian_stemmer',
                         ],
-                    }
+                    },
                 },
             },
         },
@@ -180,7 +180,7 @@ class IndexSchema(Enum):
                             'russian_stop',
                             'russian_stemmer',
                         ],
-                    }
+                    },
                 },
             },
         },

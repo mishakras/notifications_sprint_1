@@ -8,8 +8,8 @@ from recommendation.src.core import settings
 from recommendation.src.db.elastic import get_elastic
 from recommendation.src.db.redis import get_redis
 from recommendation.src.schemas.movies.films import Film
-from recommendation.src.services.cache import cache
 from recommendation.src.services.base_service import BaseElasticService
+from recommendation.src.services.cache import cache
 
 FILM_CACHE_EXPIRE_IN_SECONDS = 60 * 5  # 5 минут
 DEFAULT_REDIS = Depends(get_redis)
@@ -26,10 +26,10 @@ def construct_filters(search_values: dict):
                     "query": {
                         "terms": {
                             field + ".id": [items.keys()],
-                        }
-                    }
-                }
-            }
+                        },
+                    },
+                },
+            },
         )
     return filter_should
 
@@ -46,9 +46,9 @@ def construct_functions(search_values):
                             "query": {
                                 "terms": {
                                     field + ".id": item,
-                                }
-                            }
-                        }
+                                },
+                            },
+                        },
                     },
                     "script_score": {
                         "script": {
@@ -56,9 +56,9 @@ def construct_functions(search_values):
                                 "a": value,
                             },
                             "source": "params.a*film['imdb_rating'].value/2",
-                        }
-                    }
-                }
+                        },
+                    },
+                },
             )
     return functions
 
@@ -75,7 +75,7 @@ class FilmService(BaseElasticService):
             "query": {
                 "ids": {
                     "values": ids
-                }
+                },
             },
             "size": limit,
         }
@@ -102,8 +102,8 @@ class FilmService(BaseElasticService):
                                 "bool": {
                                     "should":
                                         construct_filters(search_values),
-                                }
-                            }
+                                },
+                            },
                         },
                         "functions": [
                             construct_functions(search_values),
@@ -114,7 +114,7 @@ class FilmService(BaseElasticService):
                 "negative": {
                     "ids": {
                         "values": ids,
-                    }
+                    },
                 },
                 "negative_boost": 0.01,
             }

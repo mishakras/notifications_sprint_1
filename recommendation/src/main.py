@@ -8,7 +8,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 
 from recommendation.src.api.recomendation.v1 import recommendations
 from recommendation.src.core import settings
-from recommendation.src.db import elastic, beanie
+from recommendation.src.db import beanie, elastic
 from recommendation.src.models.video_completion import VideoCompletionDB
 
 

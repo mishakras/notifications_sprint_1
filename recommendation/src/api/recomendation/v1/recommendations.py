@@ -33,5 +33,5 @@ async def create(
             search_values[field] = {}
     await recommendation_service.get_recommendations(
         user_id=user_id,
-        search_values=search_values
+        search_values=search_values,
     )

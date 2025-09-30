@@ -1,33 +1,29 @@
 import time
-from typing import Iterable, Any
+from typing import Any, Iterable
 from uuid import uuid4
 
 import pytest
 import pytest_asyncio
-
 from beanie import init_beanie
 from elasticsearch import AsyncElasticsearch
 from elasticsearch._async.helpers import async_bulk
-
 from fastapi.testclient import TestClient
 from motor.motor_asyncio import AsyncIOMotorClient
 
 from recommendation.src.core import settings
 from recommendation.src.main import app
 from recommendation.src.models.video_completion import (
-    VideoCompletionCreate, VideoCompletionDB
+    VideoCompletionCreate,
+    VideoCompletionDB,
 )
-from .testdata import movies
-from .testdata import history
-from .testdata.schemas import IndexSchema
+from recommendation.src.repositories.beanie_repository import BeanieRepository
 
-from recommendation.src.repositories.beanie_repository import (
-    BeanieRepository
-)
 from ..src.models.base import CreateMixin
 from ..src.repositories.completion.video_completion import (
     video_completion_repository,
 )
+from .testdata import history, movies
+from .testdata.schemas import IndexSchema
 
 
 @pytest_asyncio.fixture(name='es_client', scope='session')
@@ -80,7 +76,7 @@ def make_recommendations_client() -> TestClient:
             base_url=settings.local.host
             + ":"
             + settings.local.port
-            + '/api/v1/recommendations'
+            + '/api/v1/recommendations',
     ) as auth_api_test_client:
         auth_api_test_client.headers.setdefault(
             'X-Request-Id',
@@ -101,7 +97,7 @@ def _generate_es_actions(index_name: str, data: Iterable[dict[str, Any]]):
 async def _setup_index(
     es_client: AsyncElasticsearch,
     index: IndexSchema,
-    data: list[dict[str, Any]]
+    data: list[dict[str, Any]],
 ):
     index_name = index.name.lower()
     index_schema = index.value
@@ -141,7 +137,7 @@ async def _setup_mongo_table(
     # заполняем таблицу
     entries = _generate_mongo_entries(
         create_class_name,
-        data
+        data,
     )
     for entry in entries:
         await repository.create(entry)
@@ -158,7 +154,7 @@ async def _teardown_mongo_table(
                     "comparison": "=",
                     "value": entry["id"],
                 },
-            }
+            },
         )
 
 

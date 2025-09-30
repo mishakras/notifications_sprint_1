@@ -7,7 +7,7 @@ from recommendation.src.services.recomendation_service import (
 
 
 @pytest.mark.parametrize(
-    'query_data, expected_answer',
+    ('query_data', 'expected_answer'),
     [
         (
                 {'user_id': '043ce182-bef0-467e-9362-13d514e57837'},
@@ -21,7 +21,8 @@ from recommendation.src.services.recomendation_service import (
 )
 @pytest.mark.asyncio
 async def test_get_by_id(
-    make_recommendations_client, query_data, expected_answer
+    query_data,
+    expected_answer,
 ):
     recommendation_service = get_recommendation_service()
     history_data = await recommendation_service.get_history(
@@ -33,12 +34,12 @@ async def test_get_by_id(
 
 
 @pytest.mark.parametrize(
-    'query_data, expected_answer',
+    ('query_data', 'expected_answer'),
     [
         (
                 {'film_ids': [
                     '88f2ec42-6cf4-4e2d-a52b-a2e33b7e739d',
-                    'da805c62-e4c5-4651-853f-7b5da03d6791'
+                    'da805c62-e4c5-4651-853f-7b5da03d6791',
                 ]},
                 {
                     "len": 2,
@@ -53,7 +54,8 @@ async def test_get_by_id(
 )
 @pytest.mark.asyncio
 async def test_get_by_id_copy(
-    make_recommendations_client, query_data, expected_answer
+    query_data,
+    expected_answer,
 ):
     film_service = get_film_service()
     film_data = await film_service.search_by_ids(query_data["film_ids"])
