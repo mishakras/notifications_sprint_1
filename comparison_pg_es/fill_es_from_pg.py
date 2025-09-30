@@ -28,8 +28,8 @@ CREATE_INDEX_BODY = {
             "genre_ids": {"type": "keyword"},
             "actor_ids": {"type": "keyword"},
             "director_ids": {"type": "keyword"},
-        }
-    }
+        },
+    },
 }
 
 # Берём rating и массива ID (без nested/объектов).
@@ -61,10 +61,14 @@ FROM content.film_work fw
 ORDER BY fw.id
 """
 
-async def iter_films(conn: asyncpg.Connection) -> AsyncIterator[asyncpg.Record]:
+
+async def iter_films(
+    conn: asyncpg.Connection,
+) -> AsyncIterator[asyncpg.Record]:
     async with conn.transaction():
         async for row in conn.cursor(FILMS_SQL, prefetch=BATCH):
             yield row
+
 
 def make_doc(row: asyncpg.Record) -> tuple[str, dict[str, Any]]:
     film_id: str = row["id"]
@@ -81,25 +85,29 @@ def make_doc(row: asyncpg.Record) -> tuple[str, dict[str, Any]]:
     }
     return film_id, doc
 
+
 async def ensure_index(es: AsyncElasticsearch) -> None:
     exists = await es.indices.exists(index=ES_INDEX)
     if not exists:
         await es.indices.create(index=ES_INDEX, **CREATE_INDEX_BODY)
+
 
 async def bulk_index(es: AsyncElasticsearch, ops: list[dict]) -> None:
     if not ops:
         return
     resp = await es.bulk(operations=ops, index=ES_INDEX, refresh=False)
     if resp.get("errors"):
-        items = resp.get("items", [])
+        items = resp.get(
+            "items",
+            [],
+        )
         bad = next(
             (it for it in items if list(it.values())[0].get("error")), None
         )
         raise RuntimeError(f"Bulk had errors: {bad}")
 
+
 async def main() -> None:
-    print(f"PG_DSN={PG_DSN}")
-    print(f"ES_HOST={ES_HOST}, ES_INDEX={ES_INDEX}")
 
     es = AsyncElasticsearch(hosts=[ES_HOST], request_timeout=60)
     try:
@@ -119,7 +127,6 @@ async def main() -> None:
                     if len(ops) >= 2 * BATCH:
                         await bulk_index(es, ops)
                         total += BATCH
-                        print(f"Indexed: {total}+")
                         ops.clear()
 
             if ops:
@@ -128,7 +135,6 @@ async def main() -> None:
                 ops.clear()
 
             await es.indices.refresh(index=ES_INDEX)
-            print(f"Done. Indexed total: {total}")
         finally:
             await pool.close()
     finally:

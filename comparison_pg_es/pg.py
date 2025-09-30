@@ -12,7 +12,11 @@ class PG:
         self._pool: asyncpg.Pool | None = None
 
     async def __aenter__(self) -> "PG":
-        self._pool = await asyncpg.create_pool(self._dsn, min_size=1, max_size=10)
+        self._pool = await asyncpg.create_pool(
+            self._dsn,
+            min_size=1,
+            max_size=10,
+        )
         return self
 
     async def __aexit__(self, exc_type, exc, tb) -> None:
