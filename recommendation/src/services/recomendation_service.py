@@ -45,32 +45,41 @@ class RecommendationService:
             )
 
     async def get_history(self, user_id):
-        films_history = await self.completion_service.get_list({
-            "user_id": {
-                "comparison": "=",
-                "value": user_id,
-            },
-            "watched_percentage": {
-                "comparison": ">=",
-                "value": 0.5,
-            },
-        })
+        films_history = await self.completion_service.get_list(
+            {
+                "user_id": {
+                    "comparison": "=",
+                    "value": user_id,
+                },
+                "watched_percentage": {
+                    "comparison": ">=",
+                    "value": 0.5,
+                },
+            }
+        )
         return films_history
 
     def add_elements_to_search_fields(
-            self,
-            search_values,
-            film_field,
-            watched_percentage,
+        self,
+        search_values,
+        film_field,
+        watched_percentage,
     ):
         for element in film_field:
-            if search_values.get(
+            if (
+                search_values.get(
                     element.id,
                     None,
-            ) is None:
-                search_values[element.id] = 1*(watched_percentage * 3.5 - 1.5)
+                )
+                is None
+            ):
+                search_values[element.id] = 1 * (
+                    watched_percentage * 3.5 - 1.5
+                )
             else:
-                search_values[element.id] += 1*(watched_percentage * 3.5 - 1.5)
+                search_values[element.id] += 1 * (
+                    watched_percentage * 3.5 - 1.5
+                )
         return search_values
 
 

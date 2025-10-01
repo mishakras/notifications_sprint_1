@@ -26,7 +26,7 @@ from .testdata import history, movies
 from .testdata.schemas import IndexSchema
 
 
-@pytest_asyncio.fixture(name='es_client', scope='session')
+@pytest_asyncio.fixture(name="es_client", scope="session")
 async def es_client() -> AsyncElasticsearch:
     es_client = AsyncElasticsearch(
         hosts=[
@@ -40,7 +40,7 @@ async def es_client() -> AsyncElasticsearch:
     await es_client.close()
 
 
-@pytest_asyncio.fixture(name='beanie_client', scope='session')
+@pytest_asyncio.fixture(name="beanie_client", scope="session")
 async def beanie_client() -> AsyncElasticsearch:
     beanie_client = AsyncIOMotorClient(
         "mongodb://"
@@ -62,7 +62,7 @@ async def beanie_client() -> AsyncElasticsearch:
     beanie_client.close()
 
 
-@pytest.fixture(name='recommendation_client', scope='session')
+@pytest.fixture(name="recommendation_client", scope="session")
 def make_recommendations_client() -> TestClient:
     """
     Данная фикструа создает клиента для FastAPI Auth сервиса,
@@ -72,15 +72,15 @@ def make_recommendations_client() -> TestClient:
     при отладке тестов Fast API.
     """
     with TestClient(
-            app=app,
-            base_url=settings.local.host
-            + ":"
-            + settings.local.port
-            + '/api/v1/recommendations',
+        app=app,
+        base_url=settings.local.host
+        + ":"
+        + settings.local.port
+        + "/api/v1/recommendations",
     ) as auth_api_test_client:
         auth_api_test_client.headers.setdefault(
-            'X-Request-Id',
-            f'X_REQUEST_ID_{uuid4().hex[:6]}',
+            "X-Request-Id",
+            f"X_REQUEST_ID_{uuid4().hex[:6]}",
         )
         yield auth_api_test_client
     auth_api_test_client.close()
@@ -89,7 +89,7 @@ def make_recommendations_client() -> TestClient:
 def _generate_es_actions(index_name: str, data: Iterable[dict[str, Any]]):
     """Оборачиваем данные для вставки в ElasticSearch"""
     return [
-        {'_index': index_name, '_id': doc['id'], '_source': doc}
+        {"_index": index_name, "_id": doc["id"], "_source": doc}
         for doc in data
     ]
 
@@ -111,7 +111,7 @@ async def _setup_index(
     actions = _generate_es_actions(index_name, data)
     _, errors = await async_bulk(client=es_client, actions=actions)
     if errors:
-        raise Exception('Ошибка записи данных в Elasticsearch')
+        raise Exception("Ошибка записи данных в Elasticsearch")
 
 
 async def _teardown_index(es_client: AsyncElasticsearch, index: IndexSchema):
@@ -144,8 +144,8 @@ async def _setup_mongo_table(
 
 
 async def _teardown_mongo_table(
-        repository: BeanieRepository,
-        data: list[dict[str, Any]],
+    repository: BeanieRepository,
+    data: list[dict[str, Any]],
 ):
     for entry in data:
         await repository.delete(
@@ -158,7 +158,7 @@ async def _teardown_mongo_table(
         )
 
 
-@pytest_asyncio.fixture(autouse=True, scope='session')
+@pytest_asyncio.fixture(autouse=True, scope="session")
 async def es_setup(es_client: AsyncElasticsearch):
     index_data = {
         IndexSchema.MOVIES: movies.data,
@@ -175,7 +175,7 @@ async def es_setup(es_client: AsyncElasticsearch):
         await _teardown_index(es_client, index)
 
 
-@pytest_asyncio.fixture(autouse=True, scope='session')
+@pytest_asyncio.fixture(autouse=True, scope="session")
 async def mongo_setup(es_client: AsyncElasticsearch):
     await _setup_mongo_table(
         video_completion_repository,

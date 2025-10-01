@@ -34,8 +34,8 @@ class ES:
 
     @staticmethod
     def _topk_items(
-            weights: Dict[str, float],
-            key: int,
+        weights: Dict[str, float],
+        key: int,
     ) -> List[Tuple[str, float]]:
         """Берём по модулю веса — самые «влияющие»."""
         return sorted(

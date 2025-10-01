@@ -29,18 +29,18 @@ def _mk_weights(ids: Sequence[str]) -> Dict[str, float]:
 
 
 async def bench_once(
-        pg: PG,
-        es: ES,
-        size: int,
-        limit: int,
+    pg: PG,
+    es: ES,
+    size: int,
+    limit: int,
 ) -> Dict[str, float]:
     # синтетические "базы" id (UUID-вид)
-    persons = [f"00000000-0000-0000-0000-{str(i).zfill(12)}"
-               for i in range(1, 1000)
-               ]
-    genres = [f"00000000-0000-0000-0000-{str(i).zfill(12)}"
-              for i in range(1, 300)
-              ]
+    persons = [
+        f"00000000-0000-0000-0000-{str(i).zfill(12)}" for i in range(1, 1000)
+    ]
+    genres = [
+        f"00000000-0000-0000-0000-{str(i).zfill(12)}" for i in range(1, 300)
+    ]
 
     pick_genres = random.sample(genres, min(size, len(genres)))
     pick_actors = random.sample(persons, min(size, len(persons)))
@@ -82,8 +82,10 @@ async def run(
 ) -> None:
     rows = []
 
-    async with (PG(SETTINGS.effective_pg_dsn()) as pg,
-                ES(SETTINGS.es_host, SETTINGS.es_index) as es):
+    async with (
+        PG(SETTINGS.effective_pg_dsn()) as pg,
+        ES(SETTINGS.es_host, SETTINGS.es_index) as es
+    ):
         # warmup
         for _ in range(warmup):
             await bench_once(pg, es, size=5, limit=limit)
@@ -100,10 +102,12 @@ async def run(
                     "case": name,
                     "size": size,
                     "count": len(arr),
-                    "avg_ms": round(1000 * stats.mean(arr), 2)
-                    if arr else None,
-                    "median_ms": round(1000 * stats.median(arr), 2)
-                    if arr else None,
+                    "avg_ms": (
+                        round(1000 * stats.mean(arr), 2) if arr else None,
+                    ),
+                    "median_ms": (
+                        round(1000 * stats.median(arr), 2) if arr else None,
+                    ),
                     "p95_ms": round(1000 * p95(arr), 2) if arr else None,
                 }
 

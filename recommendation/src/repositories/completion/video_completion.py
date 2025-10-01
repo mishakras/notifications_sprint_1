@@ -8,9 +8,8 @@ from recommendation.src.repositories.beanie_repository import BeanieRepository
 
 class VideoCompletionRepository(
     BeanieRepository[
-        VideoCompletionDB,
-        VideoCompletionCreate,
-        VideoCompletionUpdate],
+        VideoCompletionDB, VideoCompletionCreate, VideoCompletionUpdate
+    ],
 ):
     pass
 

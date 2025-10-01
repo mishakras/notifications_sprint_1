@@ -35,11 +35,11 @@ class BaseBeanieService:
         self.repository = repository
 
     async def get_list(
-            self,
-            filters,
-            order: str = "id",
-            limit: int = 100,
-            offset: int = 0,
+        self,
+        filters,
+        order: str = "id",
+        limit: int = 100,
+        offset: int = 0,
     ):
         return await self.repository.read_list_by_filter(
             order=order,

@@ -93,18 +93,20 @@ class FilmService(BaseElasticService):
         search_values: dict,
         ids: list[str],
     ) -> Optional[List[Film]]:
+        query = (
+            {
+                "filtered": {
+                    "bool": {
+                        "should": construct_filters(search_values),
+                    },
+                },
+            },
+        )
         query_body = {
             "boosting": {
                 "positive": {
                     "function_score": {
-                        "query": {
-                            "filtered": {
-                                "bool": {
-                                    "should":
-                                        construct_filters(search_values),
-                                },
-                            },
-                        },
+                        "query": query,
                         "functions": [
                             construct_functions(search_values),
                         ],

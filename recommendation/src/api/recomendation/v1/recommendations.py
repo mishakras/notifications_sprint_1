@@ -18,8 +18,9 @@ router = APIRouter()
 async def create(
     user_id: str,
     search_list: list[str],
-    recommendation_service:
-    RecommendationService = Depends(get_recommendation_service),
+    recommendation_service: RecommendationService = Depends(
+        get_recommendation_service,
+    ),
 ):
     search_config = {
         "directors": 1,
