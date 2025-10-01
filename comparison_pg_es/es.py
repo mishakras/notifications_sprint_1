@@ -109,7 +109,7 @@ class ES:
             should.append(
                 {
                     "terms": {
-                        "director_ids": [pid for pid, _ in d_top]
+                        "director_ids": [pid for pid, _ in d_top],
                     },
                 },
             )

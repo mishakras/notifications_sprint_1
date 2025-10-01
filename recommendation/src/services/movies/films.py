@@ -74,7 +74,7 @@ class FilmService(BaseElasticService):
         query_body = {
             "query": {
                 "ids": {
-                    "values": ids
+                    "values": ids,
                 },
             },
             "size": limit,
@@ -109,7 +109,7 @@ class FilmService(BaseElasticService):
                             construct_functions(search_values),
                         ],
                         "boost_mode": "sum",
-                    }
+                    },
                 },
                 "negative": {
                     "ids": {
@@ -117,7 +117,7 @@ class FilmService(BaseElasticService):
                     },
                 },
                 "negative_boost": 0.01,
-            }
+            },
         }
 
         documents = await self._elastic_search("movies", query_body)
