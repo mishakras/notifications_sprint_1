@@ -84,7 +84,7 @@ async def run(
 
     async with (
         PG(SETTINGS.effective_pg_dsn()) as pg,
-        ES(SETTINGS.es_host, SETTINGS.es_index) as es
+        ES(SETTINGS.es_host, SETTINGS.es_index) as es,
     ):
         # warmup
         for _ in range(warmup):

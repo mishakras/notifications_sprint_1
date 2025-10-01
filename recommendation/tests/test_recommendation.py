@@ -41,7 +41,7 @@ async def test_get_by_id(
                 "film_ids": [
                     "88f2ec42-6cf4-4e2d-a52b-a2e33b7e739d",
                     "da805c62-e4c5-4651-853f-7b5da03d6791",
-                ]
+                ],
             },
             {
                 "len": 2,

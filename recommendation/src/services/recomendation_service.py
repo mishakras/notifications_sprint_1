@@ -55,7 +55,7 @@ class RecommendationService:
                     "comparison": ">=",
                     "value": 0.5,
                 },
-            }
+            },
         )
         return films_history
 
