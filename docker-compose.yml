@@ -114,7 +114,7 @@ services:
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
-      - "ES_JAVA_OPTS=-Xms1024m -Xmx1024m"
+      - ES_JAVA_OPTS=-Xms1536m -Xmx1536m
     restart: always
     ports:
       - "9200:9200"

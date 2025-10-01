@@ -1,0 +1,21 @@
+@startuml
+
+Client -> WebApp: Запрос рекомендаций
+WebApp -> WebRecommendBackend: Запрос рекомендаций
+WebRecommendBackend -> WebBeanieBackend: Запрос истории
+WebBeanieBackend -> Beanie: Запрос истории
+Beanie-> WebBeanieBackend: История клиента
+WebBeanieBackend -> WebRecommendBackend : История клиента
+WebRecommendBackend -> WebElasticBackend: Запрос фильмов из истории
+WebElasticBackend -> Elastic: Запрос фильмов
+Elastic-> WebElasticBackend: Фильмы
+WebElasticBackend -> WebRecommendBackend: Фильмы
+WebRecommendBackend -> WebRecommendBackend: Сбор данных из фильмов\nпо вложенным полям
+WebRecommendBackend -> WebElasticBackend: Поисковый запрос фильмов по вложенным полям
+WebElasticBackend -> Elastic: Поисковый запрос фильмов по вложенным полям
+Elastic-> WebElasticBackend: Фильмы
+WebElasticBackend -> WebRecommendBackend: Фильмы
+WebRecommendBackend-> WebApp: Фильмы
+WebApp -> Client: Фильмы
+
+@enduml

@@ -1,0 +1,7 @@
+case,size,count,avg_ms,median_ms,p95_ms
+PG rank_by_profile,5,10,10.57,10.24,11.68
+ES rank_by_profile,5,10,9.34,9.39,9.76
+PG rank_by_profile,20,10,8.97,10.17,10.67
+ES rank_by_profile,20,10,8.48,8.85,10.87
+PG rank_by_profile,100,10,11.04,11.64,12.97
+ES rank_by_profile,100,10,12.22,12.31,13.38
