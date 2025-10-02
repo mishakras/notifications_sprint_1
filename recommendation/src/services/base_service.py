@@ -15,7 +15,7 @@ class BaseElasticService:
                 index=index,
                 body=body,
             )
-        except (Exception,):
+        except Exception:
             return None
 
         documents = search_results["hits"]["hits"]
