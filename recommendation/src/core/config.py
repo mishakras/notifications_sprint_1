@@ -36,7 +36,7 @@ class LocalSettings(BaseModel):
 class LogstashSettings(BaseModel):
     host: str = ""
     port: int = 0
-    tag: str = "recommendations"
+    tag: str = ""
 
 
 class MongoDBConfig(BaseModel):
@@ -44,7 +44,7 @@ class MongoDBConfig(BaseModel):
     port: int = 0
     username: str = ""
     password: str = ""
-    name: str = "user_likes"
+    name: str = ""
 
     @computed_field
     @property
