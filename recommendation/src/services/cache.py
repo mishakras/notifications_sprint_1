@@ -4,8 +4,7 @@ from functools import wraps
 from typing import Callable
 
 from pydantic import BaseModel
-
-from recommendation.src.db.redis import Redis, get_redis
+from src.db.redis import Redis, get_redis
 
 
 def cache(expire: int):
@@ -31,7 +30,7 @@ def cache(expire: int):
 
             # Если результат — Pydantic модель, преобразуем в словарь
             if isinstance(result, BaseModel):
-                result = result.dict()
+                result = result.model_dump()
 
             # Сохраняем результат в кеш
             await redis.set(cache_key, json.dumps(result), ex=expire)

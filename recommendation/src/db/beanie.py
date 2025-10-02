@@ -1,8 +1,6 @@
-from typing import Optional
-
 from motor.motor_asyncio import AsyncIOMotorClient
 
-client: Optional[AsyncIOMotorClient] = None
+client: AsyncIOMotorClient | None = None
 
 
 # Функция понадобится при внедрении зависимостей

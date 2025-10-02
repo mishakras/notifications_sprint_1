@@ -1,9 +1,8 @@
 import os
 
 from fastapi import APIRouter, Depends
-
-from recommendation.src.core import logger
-from recommendation.src.services.recomendation_service import (
+from src.core import logger
+from src.services.recomendation_service import (
     RecommendationService,
     get_recommendation_service,
 )
@@ -12,7 +11,7 @@ router = APIRouter()
 
 
 @router.post(
-    "/recommend",
+    "/recommend/",
 )
 @logger.info(os.path.basename(__file__))
 async def create(
@@ -32,7 +31,7 @@ async def create(
     for field in search_list:
         if search_config.get(field, None) is not None:
             search_values[field] = {}
-    await recommendation_service.get_recommendations(
+    return await recommendation_service.get_recommendations(
         user_id=user_id,
         search_values=search_values,
     )

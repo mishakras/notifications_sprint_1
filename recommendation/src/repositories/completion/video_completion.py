@@ -1,9 +1,9 @@
-from recommendation.src.models.video_completion import (
+from src.models.video_completion import (
     VideoCompletionCreate,
     VideoCompletionDB,
     VideoCompletionUpdate,
 )
-from recommendation.src.repositories.beanie_repository import BeanieRepository
+from src.repositories.beanie_repository import BeanieRepository
 
 
 class VideoCompletionRepository(

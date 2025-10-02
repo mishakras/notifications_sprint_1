@@ -1,10 +1,7 @@
-from typing import Optional
-
 from beanie import PydanticObjectId
 from elasticsearch import AsyncElasticsearch
 from redis.asyncio import Redis
-
-from recommendation.src.repositories.beanie_repository import BeanieRepository
+from src.repositories.beanie_repository import BeanieRepository
 
 
 class BaseElasticService:
@@ -12,13 +9,13 @@ class BaseElasticService:
         self.redis = redis
         self.elastic = elastic
 
-    async def _elastic_search(self, index: str, body: dict) -> Optional[list]:
+    async def _elastic_search(self, index: str, body: dict) -> list | None:
         try:
             search_results = await self.elastic.search(
                 index=index,
                 body=body,
             )
-        except Exception:
+        except (Exception,):
             return None
 
         documents = search_results["hits"]["hits"]
