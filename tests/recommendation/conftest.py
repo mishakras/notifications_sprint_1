@@ -2,6 +2,7 @@
 import os
 import sys
 from contextlib import asynccontextmanager
+
 import docker
 import pytest
 from beanie import init_beanie
@@ -12,7 +13,6 @@ from redis.asyncio import Redis
 from testcontainers.core.container import DockerContainer
 from testcontainers.mongodb import MongoDbContainer
 from testcontainers.redis import RedisContainer
-
 
 ES_IMAGE = os.getenv(
     "ES_IMAGE",
@@ -164,10 +164,10 @@ async def _wire_service_clients(es_client, redis_client, mongo_client):
     Прокидываем реальные клиенты в модули сервиса и инициализируем
     beanie. Teardown не требуется.
     """
-    from recommendation.src.db import beanie as svc_beanie
-    from recommendation.src.db import elastic as svc_elastic
-    from recommendation.src.db import redis as svc_redis
-    from recommendation.src.models.video_completion import (
+    from recommendation.src.db import beanie as svc_beanie  # noqa: I001
+    from recommendation.src.db import elastic as svc_elastic  # noqa: I001
+    from recommendation.src.db import redis as svc_redis  # noqa: I001
+    from recommendation.src.models.video_completion import (  # noqa: I001
         VideoCompletionDB,
     )
 
@@ -187,13 +187,11 @@ async def _seed_es(es_client):
     """
     Сидируем тестовые фильмы в ES и удаляем индекс после сессии.
     """
-    from recommendation.tests.testdata.movies import (
-        data as MOVIES,
-    )  # isort: skip
-    from recommendation.tests.testdata.schemas import (
-        IndexSchema,
-    )  # isort: skip
+    # isort: off
+    from recommendation.tests.testdata.movies import data as MOVIES
+    from recommendation.tests.testdata.schemas import IndexSchema
 
+    # isort: on
     index_name = str(IndexSchema.MOVIES)
     schema = IndexSchema.MOVIES.value
     settings = schema.get("settings") or {}
@@ -235,19 +233,17 @@ async def _seed_mongo(mongo_client):
 
     await coll.delete_many({})
 
-    # Историю импортируем лениво и не сортируем (isort),
-    # чтобы не тащить её наверх.
+    # Историю импортируем лениво и не сортируем (isort)
+    # чтобы не тащить наверх.
+    # isort: off
     try:
-        from recommendation.tests.testdata.history import (
-            data as HISTORY,
-        )  # isort: skip
+        from recommendation.tests.testdata.history import data as HISTORY
     except Exception:
         try:
-            from tests.recommendation.testdata.history import (
-                data as HISTORY,
-            )  # isort: skip
+            from tests.recommendation.testdata.history import data as HISTORY
         except Exception:
             HISTORY = []
+    # isort: on
 
     if HISTORY:
         await coll.insert_many(HISTORY)
@@ -259,15 +255,11 @@ async def _seed_mongo(mongo_client):
 @pytest.fixture
 def recommendation_service():
     """
-    Инстанс RecommendationService с зависимостями, уже «проваренными»
-    выше через _wire_service_clients.
+    Инстанс RecommendationService с зависимостями,
+    уже «проваренными» выше через _wire_service_clients.
     """
-    from recommendation.src.services.recomendation_service import (
-        RecommendationService,
-        get_film_service,
-        get_video_completion_service,
-    )
+    from recommendation.src.services import recomendation_service as reco_srv
 
-    film_service = get_film_service()
-    completion_service = get_video_completion_service()
-    return RecommendationService(completion_service, film_service)
+    film_service = reco_srv.get_film_service()
+    completion_service = reco_srv.get_video_completion_service()
+    return reco_srv.RecommendationService(completion_service, film_service)
