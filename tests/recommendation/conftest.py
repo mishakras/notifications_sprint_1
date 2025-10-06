@@ -14,7 +14,6 @@ from testcontainers.core.container import DockerContainer
 from testcontainers.mongodb import MongoDbContainer
 from testcontainers.redis import RedisContainer
 
-
 ES_IMAGE = os.getenv(
     "ES_IMAGE",
     "docker.elastic.co/elasticsearch/elasticsearch:8.17.0",
@@ -168,9 +167,7 @@ async def _wire_service_clients(es_client, redis_client, mongo_client):
     from recommendation.src.db import beanie as svc_beanie
     from recommendation.src.db import elastic as svc_elastic
     from recommendation.src.db import redis as svc_redis
-    from recommendation.src.models.video_completion import (
-        VideoCompletionDB,
-    )
+    from recommendation.src.models.video_completion import VideoCompletionDB
 
     svc_elastic.es = es_client
     svc_redis.redis = redis_client
@@ -188,8 +185,11 @@ async def _seed_es(es_client):
     """
     Сидируем тестовые фильмы в ES и удаляем индекс после сессии.
     """
-    from recommendation.tests.testdata.movies import data as MOVIES
-    from recommendation.tests.testdata.schemas import IndexSchema
+    from recommendation.tests.testdata.movies import \
+        data as MOVIES  # isort: skip
+    from recommendation.tests.testdata.schemas import (  # isort: skip
+        IndexSchema,
+    )
 
     index_name = str(IndexSchema.MOVIES)
     schema = IndexSchema.MOVIES.value
@@ -230,10 +230,11 @@ async def _seed_mongo(mongo_client):
     await coll.delete_many({})
 
     try:
-        from recommendation.tests.testdata.history import data as HISTORY
+        from recommendation.tests.testdata.history import \
+            data as HISTORY  # isort: skip
     except Exception:
         try:
-            from tests.recommendation.testdata.history import (
+            from tests.recommendation.testdata.history import (  # isort: skip
                 data as HISTORY,
             )
         except Exception:
