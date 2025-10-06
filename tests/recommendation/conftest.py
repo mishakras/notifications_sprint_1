@@ -2,7 +2,6 @@
 import os
 import sys
 from contextlib import asynccontextmanager
-
 import docker
 import pytest
 from beanie import init_beanie
@@ -13,6 +12,7 @@ from redis.asyncio import Redis
 from testcontainers.core.container import DockerContainer
 from testcontainers.mongodb import MongoDbContainer
 from testcontainers.redis import RedisContainer
+
 
 ES_IMAGE = os.getenv(
     "ES_IMAGE",
@@ -167,7 +167,9 @@ async def _wire_service_clients(es_client, redis_client, mongo_client):
     from recommendation.src.db import beanie as svc_beanie
     from recommendation.src.db import elastic as svc_elastic
     from recommendation.src.db import redis as svc_redis
-    from recommendation.src.models.video_completion import VideoCompletionDB
+    from recommendation.src.models.video_completion import (
+        VideoCompletionDB,
+    )
 
     svc_elastic.es = es_client
     svc_redis.redis = redis_client
@@ -177,7 +179,7 @@ async def _wire_service_clients(es_client, redis_client, mongo_client):
         database=mongo_client[MONGO_DB_NAME],
         document_models=[VideoCompletionDB],
     )
-    # ничего не возвращаем — фикстура только настраивает окружение
+    # фикстура только настраивает окружение, ничего не возвращаем
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -185,11 +187,12 @@ async def _seed_es(es_client):
     """
     Сидируем тестовые фильмы в ES и удаляем индекс после сессии.
     """
-    from recommendation.tests.testdata.movies import \
-        data as MOVIES  # isort: skip
-    from recommendation.tests.testdata.schemas import (  # isort: skip
+    from recommendation.tests.testdata.movies import (
+        data as MOVIES,
+    )  # isort: skip
+    from recommendation.tests.testdata.schemas import (
         IndexSchema,
-    )
+    )  # isort: skip
 
     index_name = str(IndexSchema.MOVIES)
     schema = IndexSchema.MOVIES.value
@@ -216,7 +219,10 @@ async def _seed_es(es_client):
         await es_client.bulk(operations=actions, refresh=True)
 
     yield
-    await es_client.indices.delete(index=index_name, ignore=[400, 404])
+    await es_client.indices.delete(
+        index=index_name,
+        ignore=[400, 404],
+    )
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -229,14 +235,17 @@ async def _seed_mongo(mongo_client):
 
     await coll.delete_many({})
 
+    # Историю импортируем лениво и не сортируем (isort),
+    # чтобы не тащить её наверх.
     try:
-        from recommendation.tests.testdata.history import \
-            data as HISTORY  # isort: skip
+        from recommendation.tests.testdata.history import (
+            data as HISTORY,
+        )  # isort: skip
     except Exception:
         try:
-            from tests.recommendation.testdata.history import (  # isort: skip
+            from tests.recommendation.testdata.history import (
                 data as HISTORY,
-            )
+            )  # isort: skip
         except Exception:
             HISTORY = []
 
