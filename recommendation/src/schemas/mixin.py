@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pydantic import BaseModel
 
 
@@ -20,7 +18,7 @@ class NameMixin(BaseModel):
 
 
 class DescriptionMixin(BaseModel):
-    description: Optional[str]
+    description: str | None
 
 
 class RatingMixin(BaseModel):

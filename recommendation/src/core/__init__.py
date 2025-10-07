@@ -1,4 +1,7 @@
-__all__ = ("settings", "logger")
+__all__ = (
+    "settings",
+    "logger",
+)
 
 
 from .config import settings

@@ -1,5 +1,3 @@
-from typing import Optional
-
 from recommendation.src.schemas.mixin import (
     DescriptionMixin,
     IdMixin,
@@ -18,7 +16,7 @@ class Film(IdMixin, TitleMixin, DescriptionMixin, RatingMixin):
     """Бизнес-модель фильма."""
 
     labels: list[str]
-    genres: Optional[list[Genre]]
+    genres: list[Genre] | None
     directors: list[Person]
     actors: list[Person]
     writers: list[Person]
@@ -36,7 +34,7 @@ class ResponseFilmDetailData(
     """API-модель для вывода детальной информации о фильме."""
 
     labels: list[str]
-    genre: Optional[list[ResponseGenreData]]
+    genre: list[ResponseGenreData] | None
     directors: list[ResponsePersonData]
     actors: list[ResponsePersonData]
     writers: list[ResponsePersonData]

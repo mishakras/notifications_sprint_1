@@ -8,10 +8,7 @@ class VideoCompletionService(BaseBeanieService):
     pass
 
 
-video_completion_service = VideoCompletionService(
-    repository=video_completion_repository,
-)
-
-
 def get_video_completion_service() -> VideoCompletionService:
-    yield video_completion_service
+    return VideoCompletionService(
+        repository=video_completion_repository,
+    )

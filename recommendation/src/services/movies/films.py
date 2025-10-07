@@ -1,5 +1,3 @@
-from typing import List, Optional
-
 from elasticsearch import AsyncElasticsearch
 from fastapi import Depends
 from redis.asyncio import Redis
@@ -70,7 +68,7 @@ class FilmService(BaseElasticService):
         self,
         ids: list[str],
         limit: int,
-    ) -> Optional[List[Film]]:
+    ) -> list:
         query_body = {
             "query": {
                 "ids": {
@@ -92,7 +90,7 @@ class FilmService(BaseElasticService):
         self,
         search_values: dict,
         ids: list[str],
-    ) -> Optional[List[Film]]:
+    ) -> list:
         query = (
             {
                 "filtered": {

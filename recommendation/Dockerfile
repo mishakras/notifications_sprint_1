@@ -1,16 +1,22 @@
-FROM python:3.13
+FROM python:3.12-slim
 
-COPY ./recomendation_service/requirements.txt /opt/requirements.txt
+WORKDIR /app
 
-WORKDIR /opt
+COPY ./recommendation/requirements.txt /app/requirements.txt
 
 RUN pip install -r requirements.txt
 
-COPY ./auth_lib /opt/auth_lib
-COPY ./auth_service /opt/auth_service
+COPY ./auth_lib /app/auth_lib
+COPY ./auth_service /app/auth_service
 
-COPY ./recomendation_service /opt/recomendation_service
+COPY ./common /app/common
 
-COPY ./common /opt/common
+COPY ./recommendation /app/recommendation
 
-ENTRYPOINT ["sh","-c", "fastapi run /opt/recomendation_service/src/main.py --proxy-headers --port 8000"]
+ENTRYPOINT ["gunicorn", "recommendation.src.main:app", \
+    "--workers", "4", \
+    "--worker-class", "uvicorn.workers.UvicornWorker", \
+    "--bind", "0.0.0.0:8089", \
+    "--timeout", "600", \
+    "--proxy-protocol", \
+    "--forwarded-allow-ips", "172.28.0.10"]

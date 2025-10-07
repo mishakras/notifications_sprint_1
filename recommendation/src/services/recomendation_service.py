@@ -1,3 +1,5 @@
+from functools import lru_cache
+
 from recommendation.src.services.completion.video_completion import (
     VideoCompletionService,
     get_video_completion_service,
@@ -21,7 +23,7 @@ class RecommendationService:
     async def get_recommendations(
         self,
         user_id: str,
-        search_values: dict[str:dict],
+        search_values: dict[str, dict],
     ):
         films_history = await self.get_history(user_id)
         if len(films_history):
@@ -43,6 +45,7 @@ class RecommendationService:
                 search_values,
                 list(films_ids_to_percentage.keys()),
             )
+        return None
 
     async def get_history(self, user_id):
         films_history = await self.completion_service.get_list(
@@ -59,8 +62,8 @@ class RecommendationService:
         )
         return films_history
 
+    @staticmethod
     def add_elements_to_search_fields(
-        self,
         search_values,
         film_field,
         watched_percentage,
@@ -83,11 +86,9 @@ class RecommendationService:
         return search_values
 
 
-recommendation_service = RecommendationService(
-    completion_service=get_video_completion_service(),
-    films_service=get_film_service(),
-)
-
-
+@lru_cache
 def get_recommendation_service() -> RecommendationService:
-    yield recommendation_service
+    return RecommendationService(
+        completion_service=get_video_completion_service(),
+        films_service=get_film_service(),
+    )

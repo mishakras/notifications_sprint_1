@@ -31,7 +31,7 @@ def cache(expire: int):
 
             # Если результат — Pydantic модель, преобразуем в словарь
             if isinstance(result, BaseModel):
-                result = result.dict()
+                result = result.model_dump()
 
             # Сохраняем результат в кеш
             await redis.set(cache_key, json.dumps(result), ex=expire)

@@ -1,21 +1,16 @@
-from typing import Generic, Optional, Type, TypeVar
-
 from beanie import Document, PydanticObjectId
 from pydantic import BaseModel
 
 from .base_repository import AbstractRepository
 
-ModelType = TypeVar("ModelType", bound=Document)
-CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
-UpdateSchemaType = TypeVar("UpdateSchemaType", bound=BaseModel)
 
+class BeanieRepository[
+    ModelType: Document,
+    CreateSchemaType: BaseModel,
+    UpdateSchemaType: BaseModel,
+](AbstractRepository):
 
-class BeanieRepository(
-    AbstractRepository,
-    Generic[ModelType, CreateSchemaType, UpdateSchemaType],
-):
-
-    def __init__(self, model: Type[ModelType]):
+    def __init__(self, model: type[ModelType]):
         self.model_type = model
 
     async def get(self, document_id: PydanticObjectId) -> ModelType:
@@ -23,12 +18,12 @@ class BeanieRepository(
         return model
 
     async def create(self, data: CreateSchemaType) -> ModelType:
-        model = self.model_type(**data.dict())
+        model = self.model_type(**data.model_dump())
         await model.insert()
         return model
 
     async def update(self, data: UpdateSchemaType, filters) -> ModelType:
-        model_new_data = self.model_type(**data.dict())
+        model_new_data = self.model_type(**data.model_dump())
         model = await self.model_type.find_one(self.construct_filters(filters))
         await model.update(**model_new_data.dict())
         return model
@@ -37,7 +32,7 @@ class BeanieRepository(
         result = await self.model_type.find_one(filters).delete()
         return result.deleted_count > 0
 
-    async def read(self, filters) -> Optional[ModelType] | None:
+    async def read(self, filters) -> ModelType | None:
         return await self.model_type.find(
             self.construct_filters(filters),
         ).first_or_none()
@@ -75,7 +70,8 @@ class BeanieRepository(
             .to_list()
         )
 
-    def construct_filters(self, filters: dict):
+    @staticmethod
+    def construct_filters(filters: dict):
         filers_dict = {}
         for field, filter_vals in filters.items():
             if filter_vals["comparison"] == ">":

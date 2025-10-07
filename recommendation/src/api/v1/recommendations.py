@@ -12,7 +12,7 @@ router = APIRouter()
 
 
 @router.post(
-    "/recommend",
+    "/recommend/",
 )
 @logger.info(os.path.basename(__file__))
 async def create(
@@ -32,7 +32,7 @@ async def create(
     for field in search_list:
         if search_config.get(field, None) is not None:
             search_values[field] = {}
-    await recommendation_service.get_recommendations(
+    return await recommendation_service.get_recommendations(
         user_id=user_id,
         search_values=search_values,
     )
