@@ -90,7 +90,5 @@ async def test_recommend_endpoint_cache_hint(
 
     # If responses are ultra-fast (<20ms), ratios are noisy; clamp baseline.
     baseline = max(t1, 0.020)
-    t1_s = "{:.4f}".format(t1)
-    t2_s = "{:.4f}".format(t2)
-    msg = "Second call not fast enough: t1={0}s, t2={1}s".format(t1_s, t2_s)
+    msg = "Second call not fast enough: t1=%.4fs, t2=%.4fs" % (t1, t2)
     assert t2 <= baseline * 1.1, msg
