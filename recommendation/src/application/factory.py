@@ -4,11 +4,12 @@ from beanie import init_beanie
 from elasticsearch import AsyncElasticsearch
 from fastapi import FastAPI
 from motor.motor_asyncio import AsyncIOMotorClient
-from src.api import router
-from src.application.middleware import add_middleware
-from src.core import settings
-from src.db import beanie, elastic
-from src.models.video_completion import VideoCompletionDB
+
+from recommendation.src.api import router
+from recommendation.src.application.middleware import add_middleware
+from recommendation.src.core import settings
+from recommendation.src.db import beanie, elastic
+from recommendation.src.models.video_completion import VideoCompletionDB
 
 
 @asynccontextmanager

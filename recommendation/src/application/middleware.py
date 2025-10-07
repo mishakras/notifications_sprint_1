@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request, status
 from fastapi.responses import ORJSONResponse
-from src.core import settings
+
+from recommendation.src.core import settings
 
 
 def add_middleware(app: FastAPI) -> None:

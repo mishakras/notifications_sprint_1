@@ -4,14 +4,16 @@ WORKDIR /app
 
 COPY ./recommendation/requirements.txt /app/requirements.txt
 
+RUN pip install -r requirements.txt
+
 COPY ./auth_lib /app/auth_lib
 COPY ./auth_service /app/auth_service
 
-COPY ./recommendation/src /app/src
+COPY ./common /app/common
 
-RUN pip install -r requirements.txt
+COPY ./recommendation /app/recommendation
 
-ENTRYPOINT ["gunicorn", "src.main:app", \
+ENTRYPOINT ["gunicorn", "recommendation.src.main:app", \
     "--workers", "4", \
     "--worker-class", "uvicorn.workers.UvicornWorker", \
     "--bind", "0.0.0.0:8089", \

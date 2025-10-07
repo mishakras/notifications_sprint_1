@@ -4,7 +4,8 @@ from functools import wraps
 from typing import Callable
 
 from pydantic import BaseModel
-from src.db.redis import Redis, get_redis
+
+from recommendation.src.db.redis import Redis, get_redis
 
 
 def cache(expire: int):

@@ -1,10 +1,13 @@
-import os
 from enum import StrEnum
-from pathlib import Path
 from uuid import UUID
 
+from dotenv import dotenv_values
 from pydantic import BaseModel, computed_field
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings
+
+config = {
+    **dotenv_values("/app/common/.env"),
+}
 
 
 class Environment(StrEnum):
@@ -22,9 +25,17 @@ class AppSettings(BaseModel):
     redoc_url: str = "/api/redoc"
     debug: bool = False
     cache_ttl: int = 60 * 60 * 1
-    request_limit_per_minute: int = 20
-    environment: Environment = Environment.DEVELOP
+    request_limit_per_minute: int = int(
+        config.get("REQUEST_LIMIT_PER_MINUTE", 20),
+    )
+    environment: str = config.get("ENVIRONMENT", Environment.DEVELOP)
     zero_request_id: UUID = UUID("00000000-0000-0000-0000-000000000000")
+
+
+class LogstashSettings(BaseModel):
+    host: str = config.get("LOGSTASH_HOST", Environment.DEVELOP)
+    port: int = config.get("LOGSTASH_PORT", Environment.DEVELOP)
+    tag: str = "recommendations"
 
 
 class LocalSettings(BaseModel):
@@ -33,18 +44,12 @@ class LocalSettings(BaseModel):
     workers: int = 1
 
 
-class LogstashSettings(BaseModel):
-    host: str = ""
-    port: int = 0
-    tag: str = ""
-
-
 class MongoDBConfig(BaseModel):
-    host: str = ""
-    port: int = 0
-    username: str = ""
-    password: str = ""
-    name: str = ""
+    host: str = config["MONGO_HOST"]
+    port: int = config["MONGO_PORT"]
+    username: str = config["MONGO_USERNAME"]
+    password: str = config["MONGO_PASSWORD"]
+    name: str = "user_likes"
 
     @computed_field
     @property
@@ -58,8 +63,8 @@ class MongoDBConfig(BaseModel):
 
 
 class ElasticSettings(BaseModel):
-    host: str = ""
-    port: str = ""
+    host: str = config["ELASTIC_HOST"]
+    port: str = config["ELASTIC_PORT"]
 
     @computed_field
     @property
@@ -70,24 +75,10 @@ class ElasticSettings(BaseModel):
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(
-        env_file=(
-            [
-                str(Path(__file__).parents[3] / "common/.env"),
-                str(Path(__file__).parents[2] / ".env"),
-            ]
-            if not os.getenv("DOCKER")
-            else None
-        ),
-        env_nested_delimiter="_",
-        env_file_encoding="utf-8",
-        case_sensitive=False,
-        extra="ignore",
-    )
     app: AppSettings = AppSettings()
     local: LocalSettings = LocalSettings()
-    logstash: LogstashSettings = LogstashSettings()
     mongo: MongoDBConfig = MongoDBConfig()
+    logstash: LogstashSettings = LogstashSettings()
     elastic: ElasticSettings = ElasticSettings()
     dev: Environment = Environment.DEVELOP
 

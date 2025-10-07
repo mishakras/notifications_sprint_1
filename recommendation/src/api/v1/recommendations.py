@@ -1,8 +1,9 @@
 import os
 
 from fastapi import APIRouter, Depends
-from src.core import logger
-from src.services.recomendation_service import (
+
+from recommendation.src.core import logger
+from recommendation.src.services.recomendation_service import (
     RecommendationService,
     get_recommendation_service,
 )

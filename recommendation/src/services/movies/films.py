@@ -1,12 +1,13 @@
 from elasticsearch import AsyncElasticsearch
 from fastapi import Depends
 from redis.asyncio import Redis
-from src.core import settings
-from src.db.elastic import get_elastic
-from src.db.redis import get_redis
-from src.schemas.movies.films import Film
-from src.services.base_service import BaseElasticService
-from src.services.cache import cache
+
+from recommendation.src.core import settings
+from recommendation.src.db.elastic import get_elastic
+from recommendation.src.db.redis import get_redis
+from recommendation.src.schemas.movies.films import Film
+from recommendation.src.services.base_service import BaseElasticService
+from recommendation.src.services.cache import cache
 
 FILM_CACHE_EXPIRE_IN_SECONDS = 60 * 5  # 5 минут
 DEFAULT_REDIS = Depends(get_redis)

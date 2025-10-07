@@ -1,10 +1,13 @@
 from functools import lru_cache
 
-from src.services.completion.video_completion import (
+from recommendation.src.services.completion.video_completion import (
     VideoCompletionService,
     get_video_completion_service,
 )
-from src.services.movies.films import FilmService, get_film_service
+from recommendation.src.services.movies.films import (
+    FilmService,
+    get_film_service,
+)
 
 
 class RecommendationService:

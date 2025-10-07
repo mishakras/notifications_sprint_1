@@ -1,4 +1,4 @@
-from src.schemas.mixin import IdMixin, NameMixin, UUIDMixin
+from recommendation.src.schemas.mixin import IdMixin, NameMixin, UUIDMixin
 
 
 class Genre(IdMixin, NameMixin):

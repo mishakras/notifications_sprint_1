@@ -1,7 +1,7 @@
-from src.repositories.completion.video_completion import (
+from recommendation.src.repositories.completion.video_completion import (
     video_completion_repository,
 )
-from src.services.base_service import BaseBeanieService
+from recommendation.src.services.base_service import BaseBeanieService
 
 
 class VideoCompletionService(BaseBeanieService):

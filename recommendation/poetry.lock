@@ -327,6 +327,20 @@ trio = ["trio (>=0.30)"]
 wmi = ["wmi (>=1.5.1) ; platform_system == \"Windows\""]
 
 [[package]]
+name = "dotenv"
+version = "0.9.9"
+description = "Deprecated package"
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "dotenv-0.9.9-py2.py3-none-any.whl", hash = "sha256:29cf74a087b31dafdb5a446b6d7e11cbce8ed2741540e2339c69fbef92c94ce9"},
+]
+
+[package.dependencies]
+python-dotenv = "*"
+
+[[package]]
 name = "elastic-transport"
 version = "9.1.0"
 description = "Transport classes and utilities shared among Python Elastic client libraries"
@@ -1604,4 +1618,4 @@ propcache = ">=0.2.1"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<4.0"
-content-hash = "b93bfbcab044d87b4f6cb8c23382ef5b9d4dea4e96f53b0828a3fc7177690cc0"
+content-hash = "7fb5747181c7642a8599299e6866bfb4ffa7f8d41ec64968e0eadca2ae2e75a8"

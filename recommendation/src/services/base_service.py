@@ -1,7 +1,8 @@
 from beanie import PydanticObjectId
 from elasticsearch import AsyncElasticsearch
 from redis.asyncio import Redis
-from src.repositories.beanie_repository import BeanieRepository
+
+from recommendation.src.repositories.beanie_repository import BeanieRepository
 
 
 class BaseElasticService:

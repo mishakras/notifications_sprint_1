@@ -1,12 +1,15 @@
-from src.schemas.mixin import (
+from recommendation.src.schemas.mixin import (
     DescriptionMixin,
     IdMixin,
     RatingMixin,
     TitleMixin,
     UUIDMixin,
 )
-from src.schemas.movies.genres import Genre, ResponseGenreData
-from src.schemas.movies.persons import Person, ResponsePersonData
+from recommendation.src.schemas.movies.genres import Genre, ResponseGenreData
+from recommendation.src.schemas.movies.persons import (
+    Person,
+    ResponsePersonData,
+)
 
 
 class Film(IdMixin, TitleMixin, DescriptionMixin, RatingMixin):

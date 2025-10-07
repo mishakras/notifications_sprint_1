@@ -1,6 +1,7 @@
 import uvicorn
-from src.application.factory import create_app
-from src.core import settings
+
+from recommendation.src.application.factory import create_app
+from recommendation.src.core import settings
 
 app = create_app()
 
