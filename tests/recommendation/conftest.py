@@ -1,265 +1,51 @@
-﻿import asyncio
+import asyncio
 import os
-import sys
-from contextlib import asynccontextmanager
 
-import docker
+import httpx
 import pytest
-from beanie import init_beanie
-from docker.errors import ImageNotFound
-from elasticsearch import AsyncElasticsearch
-from motor.motor_asyncio import AsyncIOMotorClient
-from redis.asyncio import Redis
-from testcontainers.core.container import DockerContainer
-from testcontainers.mongodb import MongoDbContainer
-from testcontainers.redis import RedisContainer
 
-ES_IMAGE = os.getenv(
-    "ES_IMAGE",
-    "docker.elastic.co/elasticsearch/elasticsearch:8.17.0",
-)
+API_BASE = os.getenv("API_BASE", "http://localhost:8000")
 
-os.environ.setdefault("REDIS_HOST", "localhost")
-os.environ.setdefault("REDIS_PORT", "6379")
-os.environ.setdefault("ELASTIC_HOST", "http://localhost")
-os.environ.setdefault("ELASTIC_PORT", "9200")
-os.environ.setdefault(
-    "MONGO_DSN",
-    "mongodb://localhost:27017/recommendation-tests",
-)
-MONGO_DB_NAME = os.getenv("MONGO_DB_NAME", "recommendation-tests")
 
-REPO_ROOT = os.path.abspath(
-    os.path.join(
-        os.path.dirname(__file__),
-        "..",
-        "..",
-    ),
-)
-if REPO_ROOT not in sys.path:
-    sys.path.insert(0, REPO_ROOT)
+async def wait_http_health(url: str, timeout_s: int = 90) -> None:
+    """Wait until the API /health responds 200 or timeout."""
+    loop = asyncio.get_event_loop()
+    deadline = loop.time() + timeout_s
+    last_err: Exception | None = None
+
+    async with httpx.AsyncClient(timeout=5.0) as client:
+        while True:
+            try:
+                resp = await client.get(f"{url}/health")
+                if resp.status_code == 200:
+                    return
+            except (
+                Exception
+            ) as exc:  # noqa: BLE001 (если у вас включён flake8-bugbear)
+                last_err = exc
+
+            if loop.time() > deadline:
+                msg = (
+                    f"Service at {url} is not healthy in {timeout_s}s. "
+                    f"last_err={last_err}"
+                )
+                raise TimeoutError(msg)
+
+            await asyncio.sleep(1.0)
 
 
 @pytest.fixture(scope="session")
-def anyio_backend():
-    """Совместимость с pytest-asyncio/anyio."""
-    return "asyncio"
-
-
-@pytest.fixture(scope="session")
-def event_loop():
-    loop = asyncio.new_event_loop()
-    yield loop
-    loop.close()
-
-
-@asynccontextmanager
-async def _ensure_es_ready(es_client: AsyncElasticsearch):
-    """Дожидаемся статуса yellow/green."""
-    for _ in range(60):
-        try:
-            health = await es_client.cluster.health()
-            if health.get("status") in ("yellow", "green"):
-                break
-        except Exception:
-            pass
-        await asyncio.sleep(1)
-    yield
-
-
-@pytest.fixture(scope="session")
-def es_container():
-    """
-    Поднимаем Elasticsearch через DockerContainer.
-    Если образа нет — пытаемся загрузить; при неудаче — skip.
-    """
-    docker_client = docker.from_env()
-    try:
-        docker_client.images.get(ES_IMAGE)
-    except ImageNotFound:
-        try:
-            docker_client.images.pull(ES_IMAGE)
-        except Exception as exc:
-            pytest.skip(
-                f"Elasticsearch image '{ES_IMAGE}' недоступен: {exc}",
-            )
-
-    container = (
-        DockerContainer(ES_IMAGE)
-        .with_env("xpack.security.enabled", "false")
-        .with_env("discovery.type", "single-node")
-        .with_env("ES_JAVA_OPTS", "-Xms512m -Xmx512m")
-        .with_exposed_ports(9200)
-    )
-
-    try:
-        container.start()
-        host = container.get_container_host_ip()
-        port = int(container.get_exposed_port(9200))
-        yield f"http://{host}:{port}"
-    finally:
-        container.stop()
-
-
-@pytest.fixture(scope="session")
-async def es_client(es_container) -> AsyncElasticsearch:
-    es = AsyncElasticsearch(hosts=[es_container], verify_certs=False)
-    async with _ensure_es_ready(es):
-        yield es
-    await es.close()
-
-
-@pytest.fixture(scope="session")
-def mongo_container():
-    with MongoDbContainer("mongo:7.0") as container:
-        yield container
-
-
-@pytest.fixture(scope="session")
-def redis_container():
-    with RedisContainer("redis:7.2-alpine") as container:
-        yield container
-
-
-@pytest.fixture(scope="session")
-async def redis_client(redis_container) -> Redis:
-    host = redis_container.get_container_host_ip()
-    try:
-        port = int(redis_container.get_exposed_port("6379/tcp"))
-    except Exception:
-        port = int(redis_container.get_exposed_port(6379))
-
-    client = Redis(host=host, port=port, decode_responses=True)
-
-    for _ in range(30):
-        try:
-            if await client.ping():
-                break
-        except Exception:
-            await asyncio.sleep(0.5)
-
-    yield client
-    await client.aclose()
-
-
-@pytest.fixture(scope="session")
-async def mongo_client(mongo_container) -> AsyncIOMotorClient:
-    uri = mongo_container.get_connection_url()
-    client = AsyncIOMotorClient(uri)
-
-    for _ in range(30):
-        try:
-            await client.admin.command("ping")
-            break
-        except Exception:
-            await asyncio.sleep(0.5)
-
-    yield client
-    client.close()
+def api_base() -> str:
+    return API_BASE.rstrip("/")
 
 
 @pytest.fixture(scope="session", autouse=True)
-async def _wire_service_clients(es_client, redis_client, mongo_client):
-    """
-    Прокидываем реальные клиенты в модули сервиса и инициализируем
-    beanie. Teardown не требуется.
-    """
-    from recommendation.src.db import beanie as svc_beanie  # noqa: I001
-    from recommendation.src.db import elastic as svc_elastic  # noqa: I001
-    from recommendation.src.db import redis as svc_redis  # noqa: I001
-    from recommendation.src.models.video_completion import (  # noqa: I001
-        VideoCompletionDB,
-    )
-
-    svc_elastic.es = es_client
-    svc_redis.redis = redis_client
-    svc_beanie.client = mongo_client
-
-    await init_beanie(
-        database=mongo_client[MONGO_DB_NAME],
-        document_models=[VideoCompletionDB],
-    )
-    # фикстура только настраивает окружение, ничего не возвращаем
-
-
-@pytest.fixture(scope="session", autouse=True)
-async def _seed_es(es_client):
-    """
-    Сидируем тестовые фильмы в ES и удаляем индекс после сессии.
-    """
-    # isort: off
-    from recommendation.tests.testdata.movies import data as MOVIES
-    from recommendation.tests.testdata.schemas import IndexSchema
-
-    # isort: on
-    index_name = str(IndexSchema.MOVIES)
-    schema = IndexSchema.MOVIES.value
-    settings = schema.get("settings") or {}
-    mappings = schema.get("mappings") or {}
-
-    await es_client.indices.create(
-        index=index_name,
-        settings=settings,
-        mappings=mappings,
-        ignore=400,
-    )
-
-    actions = []
-    for doc in MOVIES:
-        actions.extend(
-            [
-                {"index": {"_index": index_name, "_id": doc["id"]}},
-                doc,
-            ],
-        )
-
-    if actions:
-        await es_client.bulk(operations=actions, refresh=True)
-
-    yield
-    await es_client.indices.delete(
-        index=index_name,
-        ignore=[400, 404],
-    )
-
-
-@pytest.fixture(scope="session", autouse=True)
-async def _seed_mongo(mongo_client):
-    """
-    Сидируем историю просмотров и чистим коллекцию после сессии.
-    """
-    db = mongo_client[MONGO_DB_NAME]
-    coll = db["videocompletiondb"]
-
-    await coll.delete_many({})
-
-    # Историю импортируем лениво и не сортируем (isort)
-    # чтобы не тащить наверх.
-    # isort: off
-    try:
-        from recommendation.tests.testdata.history import data as HISTORY
-    except Exception:
-        try:
-            from tests.recommendation.testdata.history import data as HISTORY
-        except Exception:
-            HISTORY = []
-    # isort: on
-
-    if HISTORY:
-        await coll.insert_many(HISTORY)
-
-    yield
-    await coll.delete_many({})
+async def _wait_api(api_base: str) -> None:
+    # Wait only API: dependencies should be covered by API's own health check
+    await wait_http_health(api_base)
 
 
 @pytest.fixture
-def recommendation_service():
-    """
-    Инстанс RecommendationService с зависимостями,
-    уже «проваренными» выше через _wire_service_clients.
-    """
-    from recommendation.src.services import recomendation_service as reco_srv
-
-    film_service = reco_srv.get_film_service()
-    completion_service = reco_srv.get_video_completion_service()
-    return reco_srv.RecommendationService(completion_service, film_service)
+async def client(api_base: str):
+    async with httpx.AsyncClient(base_url=api_base, timeout=15.0) as c:
+        yield c
