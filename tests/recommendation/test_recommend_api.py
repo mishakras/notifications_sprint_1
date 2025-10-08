@@ -25,6 +25,28 @@ def _build_payload(user_id: str) -> dict:
         "search_list": ["directors", "actors", "writers", "genres"],
     }
 
+@pytest.mark.anyio
+async def test_recommend_invalid_user_id_returns_422(
+    client: httpx.AsyncClient,
+) -> None:
+    payload = {"user_id": "not-a-uuid", "search_list": ["directors"]}
+    resp = await client.post(RECOMMEND_PATH, json=payload)
+    assert resp.status_code == 422, resp.text
+
+
+@pytest.mark.anyio
+async def test_recommend_empty_search_list_is_ok(
+    client: httpx.AsyncClient,
+) -> None:
+    payload = {
+        "user_id": "043ce182-bef0-467e-9362-13d514e57837",
+        "search_list": [],
+    }
+    resp = await client.post(RECOMMEND_PATH, json=payload)
+    assert resp.status_code == 200, resp.text
+    data = resp.json()
+    assert (data is None) or isinstance(data, list)
+
 
 @pytest.mark.anyio
 @pytest.mark.parametrize("user_id", UUIDS)
