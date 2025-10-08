@@ -15,7 +15,7 @@ router = APIRouter()
 async def create(
     payload: RecommendRequest,
     recommendation_service: RecommendationService = Depends(
-        get_recommendation_service
+        get_recommendation_service,
     ),
 ):
     """

@@ -25,6 +25,7 @@ def _build_payload(user_id: str) -> dict:
         "search_list": ["directors", "actors", "writers", "genres"],
     }
 
+
 @pytest.mark.anyio
 async def test_recommend_invalid_user_id_returns_422(
     client: httpx.AsyncClient,
