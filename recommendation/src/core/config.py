@@ -18,7 +18,6 @@ class Environment(StrEnum):
 
 class AppSettings(BaseModel):
     title: str = "Recommendations"
-    description: str = "Сервис пользовательских рекомендаций"
     version: str = "0.0.1"
     docs_url: str = "/api/openapi"
     openapi_url: str = "/api/openapi.json"

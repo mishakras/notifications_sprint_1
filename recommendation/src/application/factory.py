@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from motor.motor_asyncio import AsyncIOMotorClient
 
 from recommendation.src.api import router
+from recommendation.src.api.docs import API_DESCRIPTION
 from recommendation.src.application.middleware import add_middleware
 from recommendation.src.core import settings
 from recommendation.src.db import beanie, elastic
@@ -34,7 +35,7 @@ async def lifespan(app: FastAPI):
 def create_app() -> FastAPI:
     app = FastAPI(
         title=settings.app.title,
-        description=settings.app.description,
+        description=API_DESCRIPTION,
         version=settings.app.version,
         docs_url=settings.app.docs_url,
         openapi_url=settings.app.openapi_url,
