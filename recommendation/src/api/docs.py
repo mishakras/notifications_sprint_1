@@ -36,7 +36,7 @@ API_TAGS = [
     {
         "name": "recommendations",
         "description": ("Операции для получения ",
-                        "персонализированных рекомендаций фильмов",),
+                        "персонализированных рекомендаций фильмов"),
     },
 ]
 
@@ -53,10 +53,10 @@ VALIDATION_ERROR_RESPONSE = {
                             "loc": ["query", "user_id"],
                             "msg": "Input should be a valid string",
                             "input": None,
-                        }
-                    ]
-                }
-            }
+                        },
+                    ],
+                },
+            },
         },
     },
 }

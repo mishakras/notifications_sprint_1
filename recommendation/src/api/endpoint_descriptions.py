@@ -52,41 +52,41 @@ RECOMMEND_RESPONSES = {
                                 "title": "Интерстеллар",
                                 "description": ("Экипаж исследователей ",
                                                 "путешествует через ",
-                                                "червоточину в космосе...",),
+                                                "червоточину в космосе..."),
                                 "imdb_rating": 8.6,
                                 "labels": ["sci-fi", "adventure", "drama"],
                                 "genres": [
                                     {
                                         "id": ("120a21cf-9097-479e",
-                                               "-904a-13dd7198c1dd",),
+                                               "-904a-13dd7198c1dd"),
                                         "name": "Фантастика",
-                                    }
+                                    },
                                 ],
                                 "directors": [
                                     {
                                         "id": ("b4c6b6c0-7b9a-4b5a-",
-                                               "8a1a-7a9a1b4b6c0d",),
+                                               "8a1a-7a9a1b4b6c0d"),
                                         "name": "Кристофер Нолан",
-                                    }
+                                    },
                                 ],
                                 "actors": [
                                     {
                                         "id": ("c8d7e6f5-4a3b-2c1d",
-                                               "-9e8f-7a6b5c4d3e2f",),
+                                               "-9e8f-7a6b5c4d3e2f"),
                                         "name": "Мэттью Макконахи",
                                     },
                                     {
                                         "id": ("d9e8f7a6-5b4c-3d2e",
-                                               "-1f0a-8b7c6d5e4f3a",),
+                                               "-1f0a-8b7c6d5e4f3a"),
                                         "name": "Энн Хэтэуэй",
                                     },
                                 ],
                                 "writers": [
                                     {
                                         "id": ("e1f2a3b4-6c5d-4e3f",
-                                               "-8a9b-0c1d2e3f4a5b",),
+                                               "-8a9b-0c1d2e3f4a5b"),
                                         "name": "Джонатан Нолан",
-                                    }
+                                    },
                                 ],
                                 "directors_names": ["Кристофер Нолан"],
                                 "actors_names": [
@@ -94,15 +94,15 @@ RECOMMEND_RESPONSES = {
                                     "Энн Хэтэуэй",
                                 ],
                                 "writers_names": ["Джонатан Нолан"],
-                            }
+                            },
                         ],
                     },
                     "no_recommendations": {
                         "summary": "Рекомендации не найдены",
                         "value": None,
                     },
-                }
-            }
+                },
+            },
         },
     },
     **VALIDATION_ERROR_RESPONSE,
