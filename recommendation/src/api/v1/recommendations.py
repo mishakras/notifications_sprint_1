@@ -1,5 +1,9 @@
 from fastapi import APIRouter, Depends
 
+from recommendation.src.api.endpoint_descriptions import (
+    RECOMMEND_DESCRIPTION,
+    RECOMMEND_RESPONSES,
+)
 from recommendation.src.core import logger
 from recommendation.src.schemas.recommendation import RecommendRequest
 from recommendation.src.services.recomendation_service import (
@@ -10,7 +14,12 @@ from recommendation.src.services.recomendation_service import (
 router = APIRouter()
 
 
-@router.post("/recommend")
+@router.post(
+    "/recommend/",
+    summary="Получить персонализированные рекомендации",
+    description=RECOMMEND_DESCRIPTION,
+    responses=RECOMMEND_RESPONSES,
+)
 @logger.info(__name__)
 async def create(
     payload: RecommendRequest,
