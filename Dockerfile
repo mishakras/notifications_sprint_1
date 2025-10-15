@@ -1,18 +1,16 @@
-FROM python:3.13 AS base
-RUN apt-get update && apt-get install -y \
-    vim \
-    iputils-ping
+FROM python:3.13
+
+COPY ./recomendation_service/requirements.txt /opt/requirements.txt
 
 WORKDIR /opt
-ENV PYTHONPATH=/opt
-COPY ./pyproject.toml ./pyproject.toml
 
-FROM base AS stage_one
-WORKDIR /opt
-# RUN pip install --no-cache-dir --upgrade -r requirements.txt
-RUN pip install --upgrade pip
-RUN pip install .
+RUN pip install -r requirements.txt
 
-COPY . .
+COPY ./auth_lib /opt/auth_lib
+COPY ./auth_service /opt/auth_service
 
-ENTRYPOINT ["sh", "-c", "ALEMBIC_CONFIG=/opt/fastapi_solution/src/alembic.ini alembic upgrade head && fastapi run /opt/fastapi_solution/src/main.py --proxy-headers --port 8000"]
+COPY ./recomendation_service /opt/recomendation_service
+
+COPY ./common /opt/common
+
+ENTRYPOINT ["sh","-c", "fastapi run /opt/recomendation_service/src/main.py --proxy-headers --port 8000"]

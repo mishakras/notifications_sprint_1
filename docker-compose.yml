@@ -114,7 +114,7 @@ services:
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
-      - "ES_JAVA_OPTS=-Xms1024m -Xmx1024m"
+      - ES_JAVA_OPTS=-Xms1536m -Xmx1536m
     restart: always
     ports:
       - "9200:9200"
@@ -476,6 +476,20 @@ services:
     networks:
       fastapi_network:
         ipv4_address: 172.28.0.153
+
+  recommendation:
+    build:
+      context: .
+      dockerfile: recommendation/Dockerfile
+    container_name: recommendation
+    env_file:
+      - ./common/.env
+    ports:
+    - "8089:8089"
+    restart: unless-stopped
+    networks:
+      fastapi_network:
+        ipv4_address: 172.28.0.154
 
 networks:
   fastapi_network:
