@@ -1,5 +1,6 @@
 from beanie import PydanticObjectId
 from elasticsearch import AsyncElasticsearch
+from elasticsearch.exceptions import NotFoundError
 from redis.asyncio import Redis
 
 from recommendation.src.repositories.beanie_repository import BeanieRepository
@@ -16,7 +17,7 @@ class BaseElasticService:
                 index=index,
                 body=body,
             )
-        except Exception:
+        except NotFoundError:
             return None
 
         documents = search_results["hits"]["hits"]
