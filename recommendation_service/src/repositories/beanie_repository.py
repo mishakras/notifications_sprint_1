@@ -78,16 +78,17 @@ class BeanieRepository(
     def construct_filters(self, filters: dict):
         filers_dict = {}
         for field, filter_vals in filters.items():
-            if filter_vals["comparison"] == ">":
-                filers_dict[field] = {"$gt": filter_vals["value"]}
-            if filter_vals["comparison"] == ">=":
-                filers_dict[field] = {"$gte": filter_vals["value"]}
-            if filter_vals["comparison"] == "<":
-                filers_dict[field] = {"$lt": filter_vals["value"]}
-            if filter_vals["comparison"] == "<=":
-                filers_dict[field] = {"$lte": filter_vals["value"]}
-            if filter_vals["comparison"] == "in":
-                filers_dict[field] = {"$in": filter_vals["value"]}
-            if filter_vals["comparison"] == "=":
-                filers_dict[field] = {"$eq": filter_vals["value"]}
+            match filter_vals["comparison"]:
+                case ">":
+                    filers_dict[field] = {"$gt": filter_vals["value"]}
+                case ">=":
+                    filers_dict[field] = {"$gte": filter_vals["value"]}
+                case "<":
+                    filers_dict[field] = {"$lt": filter_vals["value"]}
+                case "<=":
+                    filers_dict[field] = {"$lte": filter_vals["value"]}
+                case "in":
+                    filers_dict[field] = {"$in": filter_vals["value"]}
+                case "=":
+                    filers_dict[field] = {"$eq": filter_vals["value"]}
         return filers_dict
