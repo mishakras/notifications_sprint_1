@@ -7,12 +7,12 @@ from pydantic import BaseModel
 
 from recommendation.src.db.redis import Redis, get_redis
 
-P = ParamSpec("P")  # сохраняем сигнатуру через ParamSpec
-R = TypeVar("R")  # тип возвращаемого значения
+FuncParams = ParamSpec("FuncParams")  # сохраняем сигнатуру через ParamSpec
+ReturnT = TypeVar("ReturnT")  # тип возвращаемого значения
 
 # алиасы типов, чтобы уложиться в длину строки
-OrigFunc = Callable[P, Awaitable[R]]
-WrappedFunc = Callable[P, Awaitable[Any]]
+OrigFunc = Callable[FuncParams, Awaitable[ReturnT]]
+WrappedFunc = Callable[FuncParams, Awaitable[Any]]
 
 
 def _json_default(obj: Any) -> str:
@@ -36,7 +36,9 @@ def cache(expire: int) -> Callable[[OrigFunc], WrappedFunc]:
     # фабрика декоратора с точной типизацией входа/выхода
     def decorator(func: OrigFunc) -> WrappedFunc:
         @wraps(func)
-        async def wrapper(*args: P.args, **kwargs: P.kwargs) -> Any:
+        async def wrapper(
+            *args: FuncParams.args, **kwargs: FuncParams.kwargs
+        ) -> Any:
             redis: Redis = await get_redis()
 
             cache_key = _make_cache_key(func, args, kwargs)
@@ -47,7 +49,7 @@ def cache(expire: int) -> Callable[[OrigFunc], WrappedFunc]:
                     cached = cached.decode("utf-8")
                 return json.loads(cached)
 
-            result: R = await func(*args, **kwargs)
+            result: ReturnT = await func(*args, **kwargs)
 
             if isinstance(result, BaseModel):
                 payload: Any = result.model_dump()
