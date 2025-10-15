@@ -124,8 +124,7 @@ class FilmService(BaseElasticService):
         if documents:
             results = [Film(**doc) for doc in documents]
             return results
-        else:
-            return []
+        return []
 
 
 def get_film_service(
