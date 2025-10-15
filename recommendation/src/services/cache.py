@@ -37,7 +37,8 @@ def cache(expire: int) -> Callable[[OrigFunc], WrappedFunc]:
     def decorator(func: OrigFunc) -> WrappedFunc:
         @wraps(func)
         async def wrapper(
-            *args: FuncParams.args, **kwargs: FuncParams.kwargs
+            *args: FuncParams.args,
+            **kwargs: FuncParams.kwargs,
         ) -> Any:
             redis: Redis = await get_redis()
 
